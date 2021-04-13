@@ -3,31 +3,9 @@ package FSM
 import (
 	"fmt"
 
+	"../config"
 	"../driver/elevio"
 )
-
-type ElevatorState int
-
-const (
-	IDLE      = 0
-	RUNNING   = 1
-	DOOR_OPEN = 2
-)
-
-type Direction int
-
-const (
-	UP    = 1
-	DOWN  = -1
-	STILL = 0
-)
-
-type Elev struct {
-	State ElevatorState
-	Dir   Direction
-	Floor int
-	Queue [numFloors][numButtons]bool
-}
 
 type Keypress struct {
 	Floor              int
@@ -36,7 +14,7 @@ type Keypress struct {
 	Done               bool
 }
 
-func ordersAbove(elevator Elev) bool {
+func ordersAbove(elevator config.Elev) bool {
 	currentFloor := elevator.Floor
 	for i := currentFloor + 1; i < numFloors; i++ {
 		if elevator.Queue[i][0] || elevator.Queue[i][1] || elevator.Queue[i][2] {
@@ -46,7 +24,7 @@ func ordersAbove(elevator Elev) bool {
 	return false
 }
 
-func ordersBelow(elevator Elev) bool {
+func ordersBelow(elevator config.Elev) bool {
 	currentFloor := elevator.Floor
 	for i := currentFloor - 1; i > -1; i-- {
 		if elevator.Queue[i][0] || elevator.Queue[i][1] || elevator.Queue[i][2] {
@@ -56,12 +34,12 @@ func ordersBelow(elevator Elev) bool {
 	return false
 }
 
-func ordersInFloor(elevator Elev) bool {
+func ordersInFloor(elevator config.Elev) bool {
 	for btn := 0; btn < numButtons; btn++ {
 		if elevator.Queue[elevator.Floor][btn] {
-			if elevator.Dir == UP && btn == 0 { //makes sure the elevator only stops of the order is in the same direction
+			if elevator.Dir == config.UP && btn == 0 { //makes sure the elevator only stops of the order is in the same direction
 				return true
-			} else if elevator.Dir == DOWN && btn == 1 { //makes sure the elevator only stops of the order is in the same direction
+			} else if elevator.Dir == config.DOWN && btn == 1 { //makes sure the elevator only stops of the order is in the same direction
 				return true
 			} else if btn == 2 { //cab orders will always stop no matter which direction
 				return true
@@ -76,7 +54,7 @@ func ordersInFloor(elevator Elev) bool {
 	return false
 }
 
-func DeleteOrder(elevator *Elev) {
+func DeleteOrder(elevator *config.Elev) {
 	deletedFloor := elevator.Floor
 	for i := 0; i < numButtons; i++ {
 		elevator.Queue[elevator.Floor][i] = false
@@ -84,7 +62,7 @@ func DeleteOrder(elevator *Elev) {
 	fmt.Println("Order deleted at ", deletedFloor)
 }
 
-func DeleteAllOrders(elevator *Elev) {
+func DeleteAllOrders(elevator *config.Elev) {
 	for btn := 0; btn < numButtons; btn++ {
 		for floor := 0; floor < numFloors; floor++ {
 			elevator.Queue[floor][btn] = false
@@ -94,9 +72,9 @@ func DeleteAllOrders(elevator *Elev) {
 
 }
 
-func chooseElevatorDir(elevator Elev) elevio.MotorDirection {
+func chooseElevatorDir(elevator config.Elev) elevio.MotorDirection {
 	switch elevator.Dir {
-	case STILL:
+	case config.STILL:
 		if ordersAbove(elevator) {
 			return elevio.MD_Up
 		} else if ordersBelow(elevator) {
@@ -104,7 +82,7 @@ func chooseElevatorDir(elevator Elev) elevio.MotorDirection {
 		} else {
 			return elevio.MD_Stop
 		}
-	case UP:
+	case config.UP:
 		if ordersAbove(elevator) {
 			return elevio.MD_Up
 		} else if ordersBelow(elevator) {
@@ -113,7 +91,7 @@ func chooseElevatorDir(elevator Elev) elevio.MotorDirection {
 			return elevio.MD_Stop
 		}
 
-	case DOWN:
+	case config.DOWN:
 		if ordersBelow(elevator) {
 			return elevio.MD_Down
 		} else if ordersAbove(elevator) {
@@ -125,32 +103,32 @@ func chooseElevatorDir(elevator Elev) elevio.MotorDirection {
 	return elevio.MD_Stop
 }
 
-func shouldStop(elevator Elev) bool {
+func shouldStop(elevator config.Elev) bool {
 	switch elevator.Dir {
-	case UP:
+	case config.UP:
 		return elevator.Queue[elevator.Floor][elevio.BT_HallUp] ||
 			elevator.Queue[elevator.Floor][elevio.BT_Cab] ||
 			!ordersAbove(elevator)
-	case DOWN:
+	case config.DOWN:
 		return elevator.Queue[elevator.Floor][elevio.BT_HallDown] ||
 			elevator.Queue[elevator.Floor][elevio.BT_Cab] ||
 			!ordersBelow(elevator)
-	case STILL:
+	case config.STILL:
 	}
 	return false
 }
 
-func motorDirToElevDir(direction elevio.MotorDirection) Direction {
+func motorDirToElevDir(direction elevio.MotorDirection) config.Direction {
 	if direction == elevio.MD_Up {
-		return UP
+		return config.UP
 	} else if direction == elevio.MD_Down {
-		return DOWN
+		return config.DOWN
 	} else {
-		return STILL
+		return config.STILL
 	}
 }
 
-func printQueue(elevator Elev) {
+func printQueue(elevator config.Elev) {
 	for button := 0; button < numButtons; button++ {
 		for floor := 0; floor < numFloors; floor++ {
 			fmt.Println(elevator.Queue[floor][button])
