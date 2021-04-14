@@ -41,7 +41,9 @@ func costFunc(incomingOrder elevio.ButtonEvent, othersLocation [numElev]int) int
 	return 1
 }
 
-func OrderMan(orderChan config.OrderChannels) {
+var iteration = 0
+
+func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels) {
 
 	for {
 		select {
@@ -51,6 +53,12 @@ func OrderMan(orderChan config.OrderChannels) {
 			fmt.Println("selected elev: ", 1)
 			orderChan.ExtOrder <- incomingOrder
 
+		case elevState := <-elevChan.Elevator:
+			if iteration%10000000 == 0 {
+				println("in order manager", elevState.Floor)
+			}
+
+			iteration++
 		}
 	}
 

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"./FSM"
@@ -21,25 +20,14 @@ const numButtons = 3
 const numElevs = 3
 
 type NetworkMessage struct {
-	Elevator FSM.Elev
+	Elevator config.Elev
 }
-type Elev struct {
-	State FSM.ElevatorState
-	Dir   FSM.Direction
-	Floor int
-	Queue [numFloors][numButtons]bool
-}
-
-type ElevChannels struct{
-	Elevator chan Elev
-}
-
 
 func main() {
 
-	var elevator = FSM.Elev{
-		State: FSM.IDLE,
-		Dir:   FSM.STILL,
+	var elevator = config.Elev{
+		State: config.IDLE,
+		Dir:   config.STILL,
 		Floor: 0, //denne har ingenting å si siden den oppdateres i FSMinit
 		Queue: [numFloors][numButtons]bool{},
 	}
@@ -74,13 +62,9 @@ func main() {
 		OthersLocation: make(chan [numElevs]int),
 	}
 
-	elevChannels := ElevChannels{
-		Elevator: make(chan Elev)
+	elevChannels := config.ElevChannels{
+		Elevator: make(chan config.Elev),
 	}
-
-
-
-
 
 	/*dummyString := "fuck u bitch"
 	transmitEnable := make(chan bool)
@@ -90,9 +74,9 @@ func main() {
 	go elevio.PollButtons(driverChannels.DrvButtons)
 	go elevio.PollFloorSensor(driverChannels.DrvFloors)
 	go elevio.PollStopButton(driverChannels.DrvStop)
-	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels)
+	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels, &elevator)
 
-	go ordermanager.OrderMan(orderChannels)
+	go ordermanager.OrderMan(orderChannels, elevChannels)
 
 	// ... or alternatively, we can use the local IP address.
 	// (But since we can run multiple programs on the same PC, we also append the
@@ -112,8 +96,8 @@ func main() {
 	// We can disable/enable the transmitter after it has been started.
 	// This could be used to signal that we are somehow "unavailable".
 	peerTxEnable := make(chan bool)
-	go peers.Transmitter(15647, id, peerTxEnable)
-	go peers.Receiver(15647, peerUpdateCh)
+	go peers.Transmitter(15648, id, peerTxEnable)
+	go peers.Receiver(15648, peerUpdateCh)
 
 	// We make channels for sending and receiving our custom data types
 	networkTx := make(chan NetworkMessage)
@@ -121,41 +105,37 @@ func main() {
 	// ... and start the transmitter/receiver pair on some port
 	// These functions can take any number of channels! It is also possible to
 	//  start multiple transmitters/receivers on the same port.
-	tranPort := strconv.Atoi(*elevPort_p)
-	go bcast.Transmitter(tranPort+1, networkTx)
-	go bcast.Receiver(tranPort+1, networkRx)
-
-	elevChan := make(chan FSM.Elev)
-
-
+	//tranPort := strconv.Atoi(*elevPort_p)
+	go bcast.Transmitter(15647, networkTx)
+	go bcast.Receiver(15647, networkRx)
 
 	// The example message. We just send one of these every second.
 	go func() {
-		elevChan <- elevator
-		netMessage := elevChan
+
 		for {
+			elev := <-elevChannels.Elevator
+			netMessage := NetworkMessage{elev}
 			networkTx <- netMessage
+			println("transmitting")
 			time.Sleep(1 * time.Second)
 		}
 	}()
-
 	fmt.Println("Started")
-	go func(){
+	go func() {
 		for {
 			select {
 			case p := <-peerUpdateCh:
-			fmt.Printf("Peer update:\n")
-			fmt.Printf("  Peers:    %q\n", p.Peers)
-			fmt.Printf("  New:      %q\n", p.New)
-			fmt.Printf("  Lost:     %q\n", p.Lost)
+				fmt.Printf("Peer update:\n")
+				fmt.Printf("  Peers:    %q\n", p.Peers)
+				fmt.Printf("  New:      %q\n", p.New)
+				fmt.Printf("  Lost:     %q\n", p.Lost)
 
 			case receivedElev := <-networkRx:
-			fmt.Print(receivedElev)
+				fmt.Print(receivedElev)
 			}
 		}
-	}
+	}()
 
-
-	FSM.InternalControl(driverChannels, orderChannels, elevChannels)
+	FSM.InternalControl(driverChannels, orderChannels, elevChannels, &elevator)
 
 }
