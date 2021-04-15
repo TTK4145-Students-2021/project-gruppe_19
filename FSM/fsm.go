@@ -88,7 +88,7 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 
 			}
 		case config.DOOR_OPEN:
-			printQueue(*elevator)
+			//printQueue(*elevator)
 			elevio.SetDoorOpenLamp(true)
 			dir = elevio.MD_Stop
 			elevio.SetMotorDirection(dir)

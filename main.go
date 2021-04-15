@@ -66,13 +66,15 @@ func main() {
 		Elevator: make(chan config.Elev),
 	}
 
+	mapChan := make(chan map[string]config.Elev)
+
 	go elevio.PollObstructionSwitch(driverChannels.DrvObstr)
 	go elevio.PollButtons(driverChannels.DrvButtons)
 	go elevio.PollFloorSensor(driverChannels.DrvFloors)
 	go elevio.PollStopButton(driverChannels.DrvStop)
 	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels, &elevator)
 
-	go ordermanager.OrderMan(orderChannels, elevChannels)
+	go ordermanager.OrderMan(orderChannels, elevChannels, mapChan)
 
 	// ... or alternatively, we can use the local IP address.
 	// (But since we can run multiple programs on the same PC, we also append the
@@ -92,12 +94,12 @@ func main() {
 	// We can disable/enable the transmitter after it has been started.
 	// This could be used to signal that we are somehow "unavailable".
 	peerTxEnable := make(chan bool)
-	elevInt, _ := strconv.Atoi(elevPort)
+	//elevInt, _ := strconv.Atoi(elevPort)
 	receiveInt, _ := strconv.Atoi(receivePort)
 	transmitInt, _ := strconv.Atoi(transmitPort)
 
-	go peers.Transmitter(elevInt+1, id, peerTxEnable)
-	go peers.Receiver(elevInt-1, peerUpdateCh)
+	go peers.Transmitter(transmitInt+1, id, peerTxEnable)
+	go peers.Receiver(receiveInt+1, peerUpdateCh)
 
 	// We make channels for sending and receiving our custom data types
 	networkTx := make(chan config.NetworkMessage)
@@ -109,8 +111,8 @@ func main() {
 	go bcast.Transmitter(transmitInt, networkTx)
 	go bcast.Receiver(receiveInt, networkRx)
 
-	go elevNet.SendElev(networkTx, elevChannels)
-	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh)
+	go elevNet.SendElev(networkTx, elevChannels, id)
+	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, mapChan)
 
 	// The example message. We just send one of these every second.
 	fmt.Println("Started")

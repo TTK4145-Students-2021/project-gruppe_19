@@ -52,4 +52,5 @@ type ElevChannels struct {
 
 type NetworkMessage struct {
 	Elevator Elev
+	ID       string
 }
