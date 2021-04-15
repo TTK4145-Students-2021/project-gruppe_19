@@ -29,18 +29,17 @@ func main() {
 		Queue: [numFloors][numButtons]bool{},
 	}
 
-	var id string
 	elevPort_p := flag.String("elev_port", "15657", "The port of the elevator to connect to (for sim purposes)")
 	transmitPort_p := flag.String("transmit_port", "15654", "Port to transmit to other elevator")
 	receivePort_p := flag.String("receive_port", "15655", "Port to receive from other elevator")
-	//får noen ganger out of index error i ordersInFloor funksjonen når forskjellige porter brukes!!!??!
 
-	flag.StringVar(&id, "id", "", "id of this peer")
+	id_p := flag.String("elev_id", "id", "id of this peer")
 	flag.Parse()
 
 	elevPort := *elevPort_p
 	receivePort := *receivePort_p
 	transmitPort := *transmitPort_p
+	id := *id_p
 	hostString := "localhost:" + elevPort
 
 	fmt.Println("Elevport ", hostString)
@@ -98,7 +97,7 @@ func main() {
 	transmitInt, _ := strconv.Atoi(transmitPort)
 
 	go peers.Transmitter(elevInt+1, id, peerTxEnable)
-	go peers.Receiver(elevInt+1, peerUpdateCh)
+	go peers.Receiver(elevInt-1, peerUpdateCh)
 
 	// We make channels for sending and receiving our custom data types
 	networkTx := make(chan config.NetworkMessage)
@@ -115,9 +114,6 @@ func main() {
 
 	// The example message. We just send one of these every second.
 	fmt.Println("Started")
-	go func() {
-
-	}()
 
 	FSM.InternalControl(driverChannels, orderChannels, elevChannels, &elevator)
 

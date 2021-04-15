@@ -58,7 +58,7 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels) {
 				println("in order manager", elevState.Floor)
 			}
 
-			iteration++
+			iteration++ //dette er bare piss for å ta inn en elevator hele tiden. Skal fjernes
 		}
 	}
 

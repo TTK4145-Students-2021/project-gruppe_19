@@ -22,15 +22,25 @@ const numButtons = 3
 
 var dir elevio.MotorDirection
 
-func FsmInit(elevator *config.Elev) {
+func FsmInit(elevator *config.Elev, drvChan config.DriverChannels) {
 
-	// Needs to start in a well-defined state
-	for elevator.Floor = elevio.GetFloor(); elevator.Floor < 0; elevator.Floor = elevio.GetFloor() {
-		elevio.SetMotorDirection(elevio.MD_Up)
-		time.Sleep(1 * time.Second)
+	elevio.SetDoorOpenLamp(false)
+	elevio.SetMotorDirection(elevio.MD_Down)
+	for {
+		select {
+		case floor := <-drvChan.DrvFloors:
+			elevio.SetMotorDirection(elevio.MD_Stop)
+			elevio.SetFloorIndicator(floor)
+			elevator.Floor = floor
+			for i := 0; i < numFloors; i++ {
+				for j := elevio.BT_HallUp; j < numButtons; j++ {
+					elevio.SetButtonLamp(j, i, false)
+				}
+			}
+			return
+		}
 	}
-	elevio.SetMotorDirection(elevio.MD_Stop)
-	fmt.Println("FSM initialized!")
+
 }
 
 func FsmUpdateFloor(newFloor int, elevator *config.Elev) { //hvordan dette skal gjøres igjen
@@ -44,7 +54,6 @@ func removeButtonLamps(elevator config.Elev) {
 }
 
 func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.Elev) {
-
 	for {
 		switch elevator.State {
 		case config.IDLE:
@@ -63,25 +72,27 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 				elevio.SetMotorDirection(dir)
 				elevator.State = config.RUNNING
 			}
+			elevator.Floor = elevio.GetFloor()
 			if ordersInFloor(*elevator) {
 				//println("order below, going down, current Floor: ", Floor)
 				elevator.State = config.DOOR_OPEN
 			}
-			elevChan.Elevator <- *elevator
+
 		case config.RUNNING:
+			elevator.Floor = elevio.GetFloor()
 			if ordersInFloor(*elevator) { // this is the problem : the floor is being kept constant at e.g. 2 while its moving
 				dir = elevio.MD_Stop
 				elevator.Dir = motorDirToElevDir(dir)
 				elevio.SetMotorDirection(dir)
 				elevator.State = config.DOOR_OPEN
-			}
-			elevChan.Elevator <- *elevator
 
+			}
 		case config.DOOR_OPEN:
 			printQueue(*elevator)
 			elevio.SetDoorOpenLamp(true)
 			dir = elevio.MD_Stop
 			elevio.SetMotorDirection(dir)
+			elevio.SetFloorIndicator(elevator.Floor)
 			DeleteOrder(elevator)
 			elevator.State = config.IDLE
 			doorsOpen <- elevator.Floor
@@ -90,7 +101,6 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 			elevio.SetDoorOpenLamp(false)
 			removeButtonLamps(*elevator)
 			println("DOOR CLOSE")
-			elevChan.Elevator <- *elevator
 
 		}
 	}
@@ -99,11 +109,11 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 
 // InternalControl .. Responsible for internal control of a single elevator
 func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChannels, elevChan config.ElevChannels, elevator *config.Elev) {
-	FsmInit(elevator)
+	FsmInit(elevator, drvChan)
 	for {
 		select {
 		case floor := <-drvChan.DrvFloors: //Sensor senses a new floor
-			//println("updating floor:", floor)
+			println("updating floor:", floor)
 			FsmUpdateFloor(floor, elevator)
 
 		case drvOrder := <-drvChan.DrvButtons: // a new button is pressed on this elevator
@@ -118,7 +128,6 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			fmt.Println("New order externally")
 			elevator.Queue[ExtOrder.Floor][int(ExtOrder.Button)] = true
 			elevio.SetButtonLamp(ExtOrder.Button, ExtOrder.Floor, true)
-			elevChan.Elevator <- *elevator
 
 		case floor := <-drvChan.DoorsOpen:
 
@@ -137,6 +146,7 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			drvChan.CompletedOrder <- order_OutsideUp_Completed
 			drvChan.CompletedOrder <- order_OutsideDown_Completed
 			drvChan.CompletedOrder <- order_Inside_Completed
+			elevChan.Elevator <- *elevator
 
 		case <-drvChan.DrvStop:
 			elevio.SetMotorDirection(elevio.MD_Stop)
