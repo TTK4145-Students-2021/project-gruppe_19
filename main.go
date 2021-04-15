@@ -60,6 +60,7 @@ func main() {
 		ExtOrder:       make(chan elevio.ButtonEvent),
 		DelegateOrder:  make(chan elevio.ButtonEvent),
 		OthersLocation: make(chan [numElevs]int),
+		SendOrder:      make(chan elevio.ButtonEvent),
 	}
 
 	elevChannels := config.ElevChannels{
@@ -74,7 +75,7 @@ func main() {
 	go elevio.PollStopButton(driverChannels.DrvStop)
 	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels, &elevator)
 
-	go ordermanager.OrderMan(orderChannels, elevChannels, mapChan)
+	go ordermanager.OrderMan(orderChannels, elevChannels, mapChan, id)
 
 	// ... or alternatively, we can use the local IP address.
 	// (But since we can run multiple programs on the same PC, we also append the
@@ -111,8 +112,8 @@ func main() {
 	go bcast.Transmitter(transmitInt, networkTx)
 	go bcast.Receiver(receiveInt, networkRx)
 
-	go elevNet.SendElev(networkTx, elevChannels, id)
-	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, mapChan)
+	go elevNet.SendElev(networkTx, elevChannels, id, orderChannels)
+	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, mapChan, orderChannels)
 
 	// The example message. We just send one of these every second.
 	fmt.Println("Started")

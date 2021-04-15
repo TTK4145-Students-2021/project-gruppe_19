@@ -44,29 +44,35 @@ func costFunc(incomingOrder elevio.ButtonEvent, othersLocation [numElev]int) int
 
 var iteration = 0
 
-func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapChan chan map[string]config.Elev) {
+func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapChan chan map[string]config.Elev, id string) {
 
+	orderMap := make(map[string]config.Elev)
 	for {
 		select {
 		case incomingOrder := <-orderChan.DelegateOrder:
 			//othersLocation := <-orderChan.OthersLocation
 			//selectedElev := costFunc(incomingOrder, othersLocation)
 			fmt.Println("herja")
-			elevMap := <-mapChan
 
 			orderFloor := incomingOrder.Floor
 			closestDist := 1000.0
-			bestElevID := " "
+			bestElevID := id
 
-			for id, elev := range elevMap {
+			for id, elev := range orderMap {
 				if math.Abs(float64(elev.Floor-orderFloor)) < float64(closestDist) {
 					closestDist = math.Abs(float64(elev.Floor - orderFloor))
 					bestElevID = id
 				}
 			}
 
+			if bestElevID == id {
+				orderChan.ExtOrder <- incomingOrder
+			} else {
+				orderChan.SendOrder <- incomingOrder
+			}
+
 			fmt.Println("selected elev: ", bestElevID)
-			orderChan.ExtOrder <- incomingOrder
+
 		case elevState := <-elevChan.Elevator: //something needs to take in the channels all the time, or else the FSM gets stuck
 			<-elevChan.Elevator
 			if iteration%10000000 == 0 {
@@ -75,6 +81,8 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 
 			iteration++ //dette er bare piss for å ta inn en elevator hele tiden. Skal fjernes
 
+		case orderMap = <-mapChan:
+			//heisann:)
 		}
 	}
 

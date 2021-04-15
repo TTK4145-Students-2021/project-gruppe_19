@@ -44,6 +44,7 @@ type OrderChannels struct {
 	ExtOrder       chan elevio.ButtonEvent
 	DelegateOrder  chan elevio.ButtonEvent
 	OthersLocation chan [numElevs]int
+	SendOrder      chan elevio.ButtonEvent
 }
 
 type ElevChannels struct {
@@ -51,6 +52,8 @@ type ElevChannels struct {
 }
 
 type NetworkMessage struct {
-	Elevator Elev
-	ID       string
+	Elevator  Elev
+	ID        string
+	OrderIncl bool
+	Order     elevio.ButtonEvent
 }
