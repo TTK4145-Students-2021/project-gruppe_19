@@ -4,11 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
+	"strconv"
 
 	"./FSM"
 	"./config"
 	"./driver/elevio"
+	"./elevNet"
 	"./network/bcast"
 	"./network/localip"
 	"./network/peers"
@@ -18,10 +19,6 @@ import (
 const numFloors = 4
 const numButtons = 3
 const numElevs = 3
-
-type NetworkMessage struct {
-	Elevator config.Elev
-}
 
 func main() {
 
@@ -34,12 +31,16 @@ func main() {
 
 	var id string
 	elevPort_p := flag.String("elev_port", "15657", "The port of the elevator to connect to (for sim purposes)")
+	transmitPort_p := flag.String("transmit_port", "15654", "Port to transmit to other elevator")
+	receivePort_p := flag.String("receive_port", "15655", "Port to receive from other elevator")
 	//får noen ganger out of index error i ordersInFloor funksjonen når forskjellige porter brukes!!!??!
 
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 
 	elevPort := *elevPort_p
+	receivePort := *receivePort_p
+	transmitPort := *transmitPort_p
 	hostString := "localhost:" + elevPort
 
 	fmt.Println("Elevport ", hostString)
@@ -65,10 +66,6 @@ func main() {
 	elevChannels := config.ElevChannels{
 		Elevator: make(chan config.Elev),
 	}
-
-	/*dummyString := "fuck u bitch"
-	transmitEnable := make(chan bool)
-	go peers.Transmitter(22349, dummyString, transmitEnable)*/
 
 	go elevio.PollObstructionSwitch(driverChannels.DrvObstr)
 	go elevio.PollButtons(driverChannels.DrvButtons)
@@ -96,44 +93,30 @@ func main() {
 	// We can disable/enable the transmitter after it has been started.
 	// This could be used to signal that we are somehow "unavailable".
 	peerTxEnable := make(chan bool)
-	go peers.Transmitter(15648, id, peerTxEnable)
-	go peers.Receiver(15648, peerUpdateCh)
+	elevInt, _ := strconv.Atoi(elevPort)
+	receiveInt, _ := strconv.Atoi(receivePort)
+	transmitInt, _ := strconv.Atoi(transmitPort)
+
+	go peers.Transmitter(elevInt+1, id, peerTxEnable)
+	go peers.Receiver(elevInt+1, peerUpdateCh)
 
 	// We make channels for sending and receiving our custom data types
-	networkTx := make(chan NetworkMessage)
-	networkRx := make(chan NetworkMessage)
+	networkTx := make(chan config.NetworkMessage)
+	networkRx := make(chan config.NetworkMessage)
 	// ... and start the transmitter/receiver pair on some port
 	// These functions can take any number of channels! It is also possible to
 	//  start multiple transmitters/receivers on the same port.
-	//tranPort := strconv.Atoi(*elevPort_p)
-	go bcast.Transmitter(15647, networkTx)
-	go bcast.Receiver(15647, networkRx)
+
+	go bcast.Transmitter(transmitInt, networkTx)
+	go bcast.Receiver(receiveInt, networkRx)
+
+	go elevNet.SendElev(networkTx, elevChannels)
+	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh)
 
 	// The example message. We just send one of these every second.
-	go func() {
-
-		for {
-			elev := <-elevChannels.Elevator
-			netMessage := NetworkMessage{elev}
-			networkTx <- netMessage
-			println("transmitting")
-			time.Sleep(1 * time.Second)
-		}
-	}()
 	fmt.Println("Started")
 	go func() {
-		for {
-			select {
-			case p := <-peerUpdateCh:
-				fmt.Printf("Peer update:\n")
-				fmt.Printf("  Peers:    %q\n", p.Peers)
-				fmt.Printf("  New:      %q\n", p.New)
-				fmt.Printf("  Lost:     %q\n", p.Lost)
 
-			case receivedElev := <-networkRx:
-				fmt.Print(receivedElev)
-			}
-		}
 	}()
 
 	FSM.InternalControl(driverChannels, orderChannels, elevChannels, &elevator)

@@ -52,8 +52,8 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels) {
 			//selectedElev := costFunc(incomingOrder, othersLocation)
 			fmt.Println("selected elev: ", 1)
 			orderChan.ExtOrder <- incomingOrder
-
-		case elevState := <-elevChan.Elevator:
+		case elevState := <-elevChan.Elevator: //something needs to take in the channels all the time, or else the FSM gets stuck
+			<-elevChan.Elevator
 			if iteration%10000000 == 0 {
 				println("in order manager", elevState.Floor)
 			}

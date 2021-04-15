@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
-	"project.com/network/bcast"
-	"project.com/network/localip"
-	"project.com/network/peers"
+	"./network/bcast"
+	"./network/localip"
+	"./network/peers"
 )
 
 // We define some custom struct to send over the network.

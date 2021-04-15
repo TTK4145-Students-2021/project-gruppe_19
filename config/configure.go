@@ -49,3 +49,7 @@ type OrderChannels struct {
 type ElevChannels struct {
 	Elevator chan Elev
 }
+
+type NetworkMessage struct {
+	Elevator Elev
+}
