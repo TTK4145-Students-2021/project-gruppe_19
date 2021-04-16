@@ -72,52 +72,6 @@ func DeleteAllOrders(elevator *config.Elev) {
 
 }
 
-func chooseElevatorDir(elevator config.Elev) elevio.MotorDirection {
-	switch elevator.Dir {
-	case config.STILL:
-		if ordersAbove(elevator) {
-			return elevio.MD_Up
-		} else if ordersBelow(elevator) {
-			return elevio.MD_Down
-		} else {
-			return elevio.MD_Stop
-		}
-	case config.UP:
-		if ordersAbove(elevator) {
-			return elevio.MD_Up
-		} else if ordersBelow(elevator) {
-			return elevio.MD_Down
-		} else {
-			return elevio.MD_Stop
-		}
-
-	case config.DOWN:
-		if ordersBelow(elevator) {
-			return elevio.MD_Down
-		} else if ordersAbove(elevator) {
-			return elevio.MD_Up
-		} else {
-			return elevio.MD_Stop
-		}
-	}
-	return elevio.MD_Stop
-}
-
-func shouldStop(elevator config.Elev) bool {
-	switch elevator.Dir {
-	case config.UP:
-		return elevator.Queue[elevator.Floor][elevio.BT_HallUp] ||
-			elevator.Queue[elevator.Floor][elevio.BT_Cab] ||
-			!ordersAbove(elevator)
-	case config.DOWN:
-		return elevator.Queue[elevator.Floor][elevio.BT_HallDown] ||
-			elevator.Queue[elevator.Floor][elevio.BT_Cab] ||
-			!ordersBelow(elevator)
-	case config.STILL:
-	}
-	return false
-}
-
 func motorDirToElevDir(direction elevio.MotorDirection) config.Direction {
 	if direction == elevio.MD_Up {
 		return config.UP
