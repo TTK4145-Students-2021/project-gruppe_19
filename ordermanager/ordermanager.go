@@ -53,8 +53,6 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 		case incomingOrder := <-orderChan.DelegateOrder:
 			//othersLocation := <-orderChan.OthersLocation
 			//selectedElev := costFunc(incomingOrder, othersLocation)
-			fmt.Println("herja")
-
 			orderFloor := incomingOrder.Floor
 			closestDist := 1000.0
 			bestElevID := id
@@ -65,7 +63,6 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 					bestElevID = id
 				}
 			}
-			println("ordermap: ")
 			for id, _ := range orderMap {
 				println("id in ordermap: ", id)
 			}
@@ -86,8 +83,10 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 
 			iteration++ //dette er bare piss for å ta inn en elevator hele tiden. Skal fjernes
 
-		case orderMap = <-mapChan:
-			//heisann:)
+		case incMap := <-mapChan:
+			for incId, incElev := range incMap {
+				orderMap[incId] = incElev
+			}
 		}
 	}
 

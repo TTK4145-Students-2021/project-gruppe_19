@@ -30,8 +30,8 @@ func main() {
 	}
 
 	elevPort_p := flag.String("elev_port", "15657", "The port of the elevator to connect to (for sim purposes)")
-	transmitPort_p := flag.String("transmit_port", "15654", "Port to transmit to other elevator")
-	receivePort_p := flag.String("receive_port", "15655", "Port to receive from other elevator")
+	transmitPort_p := flag.String("transmit_port", "14654", "Port to transmit to other elevator")
+	receivePort_p := flag.String("receive_port", "15555", "Port to receive from other elevator")
 
 	id_p := flag.String("elev_id", "id", "id of this peer")
 	flag.Parse()

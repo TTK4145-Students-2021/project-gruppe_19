@@ -36,7 +36,6 @@ func ordersBelow(elevator config.Elev) bool {
 
 func ordersInFloor(elevator config.Elev) bool {
 	if elevator.Floor >= 0 {
-
 		for btn := 0; btn < 3; btn++ {
 			if elevator.Queue[elevator.Floor][btn] {
 				if elevator.Dir == config.UP && btn == 0 { //makes sure the elevator only stops of the order is in the same direction
@@ -47,8 +46,6 @@ func ordersInFloor(elevator config.Elev) bool {
 					return true
 				} else if elevator.Floor == 0 || elevator.Floor == (numFloors-1) { //takes care of the edge cases
 					return true
-				} else {
-					return false
 				}
 
 			}

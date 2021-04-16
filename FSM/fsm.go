@@ -1,7 +1,6 @@
 package FSM
 
 import (
-	"fmt"
 	"time"
 
 	"../config"
@@ -116,9 +115,7 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			FsmUpdateFloor(floor, elevator)
 
 		case drvOrder := <-drvChan.DrvButtons: // a new button is pressed on this elevator
-			orderChan.DelegateOrder <- drvOrder //Delegate this order
-			fmt.Println(drvOrder)
-			elevChan.Elevator <- *elevator
+			orderChan.DelegateOrder <- drvOrder
 			/*
 				elevator.Queue[drvOrder.Floor][int(drvOrder.Button)] = true
 				elevio.SetButtonLamp(drvOrder.Button, drvOrder.Floor, true)*/
