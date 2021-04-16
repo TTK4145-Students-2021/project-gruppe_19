@@ -10,33 +10,6 @@ import (
 
 const numElev = 3
 
-/*
-type orderMess struct {
-	Floor     int
-	Direction int
-	Timelist  []int
-}
-
-//Wait for new hall orders
-func ordermanager() {
-
-	drv_buttons := make(chan elevio.ButtonEvent)
-	orderMessage := make(chan orderMess)
-	var hallbtn elevio.ButtonEvent
-	var order orderMess
-
-	for {
-		select {
-		case hallbtn = <-drv_buttons:
-			if hallbtn.Button == 2 {
-			} else {
-
-			}
-		case order = <-orderMessage:
-		}
-	}
-}*/
-
 func costFunc(incomingOrder elevio.ButtonEvent, othersLocation [numElev]int) int {
 	fmt.Println("inside ", incomingOrder, othersLocation)
 	return 1
@@ -74,14 +47,14 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 			}
 
 			fmt.Println("selected elev: ", bestElevID)
+			/*
+				case elevState := <-elevChan.Elevator: //something needs to take in the channels all the time, or else the FSM gets stuck
+					<-elevChan.Elevator
+					if iteration%10000000 == 0 {
+						println("in order manager", elevState.Floor)
+					}
 
-		case elevState := <-elevChan.Elevator: //something needs to take in the channels all the time, or else the FSM gets stuck
-			<-elevChan.Elevator
-			if iteration%10000000 == 0 {
-				println("in order manager", elevState.Floor)
-			}
-
-			iteration++ //dette er bare piss for å ta inn en elevator hele tiden. Skal fjernes
+					iteration++ //dette er bare piss for å ta inn en elevator hele tiden. Skal fjernes*/
 
 		case incMap := <-mapChan:
 			for incId, incElev := range incMap {
