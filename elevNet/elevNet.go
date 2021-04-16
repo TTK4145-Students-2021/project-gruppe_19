@@ -2,7 +2,6 @@ package elevNet
 
 import (
 	"fmt"
-	"time"
 
 	"../config"
 	"../driver/elevio"
@@ -15,13 +14,11 @@ const numButtons = 3
 func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels, id string, orderChan config.OrderChannels) {
 	elev := config.Elev{config.IDLE, config.UP, 0, [numFloors][numButtons]bool{}}
 	for {
+		dummyButton := elevio.ButtonEvent{-1, elevio.BT_HallDown}
+		netMessage := config.NetworkMessage{elev, id, false, dummyButton}
+		networkTx <- netMessage
 		select {
 		case elev = <-elevChan.Elevator:
-			dummyButton := elevio.ButtonEvent{-1, elevio.BT_HallDown}
-			netMessage := config.NetworkMessage{elev, id, false, dummyButton}
-			networkTx <- netMessage
-			println("transmitting")
-			time.Sleep(1 * time.Second)
 
 		case sendOrder := <-orderChan.SendOrder:
 			recipientID := " "
@@ -50,8 +47,7 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 
 		case receivedElev := <-networkRx:
-			fmt.Print("received ID ", receivedElev.ID)
-			if receivedElev.OrderIncl {
+			if receivedElev.OrderIncl { //if message includes order, send it to FSM
 				orderChan.ExtOrder <- receivedElev.Order
 			}
 
@@ -59,6 +55,7 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 			mapChan <- elevMap
 
 		case thisElev := <-elevChan.Elevator:
+			println("received elevator channel")
 			elevMap[id] = thisElev
 			mapChan <- elevMap
 		}

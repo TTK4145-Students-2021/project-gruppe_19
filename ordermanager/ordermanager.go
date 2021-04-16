@@ -44,9 +44,10 @@ func costFunc(incomingOrder elevio.ButtonEvent, othersLocation [numElev]int) int
 
 var iteration = 0
 
-func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapChan chan map[string]config.Elev, id string) {
+func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapChan chan map[string]config.Elev, id string, elev *config.Elev) {
 
 	orderMap := make(map[string]config.Elev)
+	orderMap[id] = *elev //insert this elevator into map with corresponding ID
 	for {
 		select {
 		case incomingOrder := <-orderChan.DelegateOrder:
@@ -63,6 +64,10 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 					closestDist = math.Abs(float64(elev.Floor - orderFloor))
 					bestElevID = id
 				}
+			}
+			println("ordermap: ")
+			for id, _ := range orderMap {
+				println("id in ordermap: ", id)
 			}
 
 			if bestElevID == id {

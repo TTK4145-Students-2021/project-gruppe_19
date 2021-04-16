@@ -60,11 +60,9 @@ func ordersInFloor(elevator config.Elev) bool {
 }
 
 func DeleteOrder(elevator *config.Elev) {
-	deletedFloor := elevator.Floor
 	for i := 0; i < numButtons; i++ {
 		elevator.Queue[elevator.Floor][i] = false
 	}
-	fmt.Println("Order deleted at ", deletedFloor)
 }
 
 func DeleteAllOrders(elevator *config.Elev) {

@@ -75,7 +75,7 @@ func main() {
 	go elevio.PollStopButton(driverChannels.DrvStop)
 	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels, &elevator)
 
-	go ordermanager.OrderMan(orderChannels, elevChannels, mapChan, id)
+	go ordermanager.OrderMan(orderChannels, elevChannels, mapChan, id, &elevator)
 
 	// ... or alternatively, we can use the local IP address.
 	// (But since we can run multiple programs on the same PC, we also append the

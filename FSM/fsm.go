@@ -113,19 +113,17 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 	for {
 		select {
 		case floor := <-drvChan.DrvFloors: //Sensor senses a new floor
-			println("updating floor:", floor)
 			FsmUpdateFloor(floor, elevator)
 
 		case drvOrder := <-drvChan.DrvButtons: // a new button is pressed on this elevator
 			orderChan.DelegateOrder <- drvOrder //Delegate this order
-			fmt.Println("New order delegated")
 			fmt.Println(drvOrder)
+			elevChan.Elevator <- *elevator
 			/*
 				elevator.Queue[drvOrder.Floor][int(drvOrder.Button)] = true
 				elevio.SetButtonLamp(drvOrder.Button, drvOrder.Floor, true)*/
 		case ExtOrder := <-orderChan.ExtOrder:
 			//AddOrder(ExtOrder)
-			fmt.Println("New order externally")
 			elevator.Queue[ExtOrder.Floor][int(ExtOrder.Button)] = true
 			elevio.SetButtonLamp(ExtOrder.Button, ExtOrder.Floor, true)
 
