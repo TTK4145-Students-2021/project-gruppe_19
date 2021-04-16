@@ -5,17 +5,23 @@ import (
 	"math"
 
 	"../config"
-	"../driver/elevio"
 )
 
 const numElev = 3
 
-func costFunc(incomingOrder elevio.ButtonEvent, othersLocation [numElev]int) int {
-	fmt.Println("inside ", incomingOrder, othersLocation)
-	return 1
-}
+func costFunc(id string, orderMap map[string]config.Elev, orderFloor int) string {
+	closestDist := 1000.0
+	bestElevID := id
+	for id, elev := range orderMap {
+		if math.Abs(float64(elev.Floor-orderFloor)) < float64(closestDist) {
+			closestDist = math.Abs(float64(elev.Floor - orderFloor))
+			bestElevID = id
+		}
+	}
+	println("closestDist: ", closestDist)
+	return bestElevID
 
-var iteration = 0
+}
 
 func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapChan chan map[string]config.Elev, id string, elev *config.Elev) {
 
@@ -24,18 +30,12 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 	for {
 		select {
 		case incomingOrder := <-orderChan.DelegateOrder:
-			//othersLocation := <-orderChan.OthersLocation
-			//selectedElev := costFunc(incomingOrder, othersLocation)
-			orderFloor := incomingOrder.Floor
-			closestDist := 1000.0
-			bestElevID := id
 
-			for id, elev := range orderMap {
-				if math.Abs(float64(elev.Floor-orderFloor)) < float64(closestDist) {
-					closestDist = math.Abs(float64(elev.Floor - orderFloor))
-					bestElevID = id
-				}
-			}
+			//TODO:få også ID-en og mapsa modulært
+			orderFloor := incomingOrder.Floor
+
+			bestElevID := costFunc(id, orderMap, orderFloor)
+
 			for id, _ := range orderMap {
 				println("id in ordermap: ", id)
 			}
@@ -44,19 +44,13 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 				orderChan.ExtOrder <- incomingOrder
 			} else {
 				orderChan.SendOrder <- incomingOrder
+				orderChan.ExternalID <- bestElevID
 			}
 
 			fmt.Println("selected elev: ", bestElevID)
-			/*
-				case elevState := <-elevChan.Elevator: //something needs to take in the channels all the time, or else the FSM gets stuck
-					<-elevChan.Elevator
-					if iteration%10000000 == 0 {
-						println("in order manager", elevState.Floor)
-					}
-
-					iteration++ //dette er bare piss for å ta inn en elevator hele tiden. Skal fjernes*/
 
 		case incMap := <-mapChan:
+			//TODO:må finne ut hvorfor mapsa blir forskjellig for hver heis
 			for incId, incElev := range incMap {
 				orderMap[incId] = incElev
 			}

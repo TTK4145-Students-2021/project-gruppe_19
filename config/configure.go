@@ -4,7 +4,6 @@ import (
 	"../driver/elevio"
 )
 
-const numElevs = 3
 const numFloors = 4
 const numButtons = 3
 
@@ -41,10 +40,10 @@ type DriverChannels struct {
 }
 
 type OrderChannels struct {
-	ExtOrder       chan elevio.ButtonEvent
-	DelegateOrder  chan elevio.ButtonEvent
-	OthersLocation chan [numElevs]int
-	SendOrder      chan elevio.ButtonEvent
+	ExtOrder      chan elevio.ButtonEvent
+	DelegateOrder chan elevio.ButtonEvent
+	SendOrder     chan elevio.ButtonEvent
+	ExternalID    chan string
 }
 
 type ElevChannels struct {

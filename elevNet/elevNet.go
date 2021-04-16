@@ -19,15 +19,11 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 		networkTx <- netMessage
 		select {
 		case elev = <-elevChan.Elevator:
+			//heisann:)
 
 		case sendOrder := <-orderChan.SendOrder:
-			recipientID := " "
-			if id == "forste" {
-				recipientID = "andre"
-			} else {
-				recipientID = "forste"
-			}
-			//need logic to send to correct elevator, this only works with two
+			recipientID := <-orderChan.ExternalID //not sure if this works. might have sync issues
+
 			netMessage := config.NetworkMessage{elev, recipientID, true, sendOrder} //bloat? idk
 			networkTx <- netMessage
 		}
@@ -47,8 +43,11 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 
 		case receivedElev := <-networkRx:
-			if receivedElev.OrderIncl { //if message includes order, send it to FSM
-				orderChan.ExtOrder <- receivedElev.Order
+			if receivedElev.ID == id {
+
+				if receivedElev.OrderIncl { //if message includes order, send it to FSM
+					orderChan.ExtOrder <- receivedElev.Order
+				}
 			}
 
 			elevMap[receivedElev.ID] = receivedElev.Elevator
