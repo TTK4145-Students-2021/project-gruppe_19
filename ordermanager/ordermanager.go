@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"../config"
+	"../driver/elevio"
 )
 
 const numElev = 3
@@ -31,23 +32,28 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 		select {
 		case incomingOrder := <-orderChan.DelegateOrder:
 
-			//TODO:få også ID-en og mapsa modulært
-			orderFloor := incomingOrder.Floor
-
-			bestElevID := costFunc(id, orderMap, orderFloor)
-
-			for id, _ := range orderMap {
-				println("id in ordermap: ", id)
-			}
-
-			if bestElevID == id {
+			if incomingOrder.Button == elevio.BT_Cab {
 				orderChan.ExtOrder <- incomingOrder
 			} else {
-				orderChan.SendOrder <- incomingOrder
-				orderChan.ExternalID <- bestElevID
-			}
 
-			fmt.Println("selected elev: ", bestElevID)
+				//TODO:få også ID-en og mapsa modulært
+				orderFloor := incomingOrder.Floor
+
+				bestElevID := costFunc(id, orderMap, orderFloor)
+
+				for id, _ := range orderMap {
+					println("id in ordermap: ", id)
+				}
+
+				if bestElevID == id {
+					orderChan.ExtOrder <- incomingOrder
+				} else {
+					orderChan.SendOrder <- incomingOrder
+					orderChan.ExternalID <- bestElevID
+				}
+
+				fmt.Println("selected elev: ", bestElevID)
+			}
 
 		case incMap := <-mapChan:
 			//TODO:må finne ut hvorfor mapsa blir forskjellig for hver heis

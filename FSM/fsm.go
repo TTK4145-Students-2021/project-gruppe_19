@@ -116,11 +116,11 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 
 		case drvOrder := <-drvChan.DrvButtons: // a new button is pressed on this elevator
 			orderChan.DelegateOrder <- drvOrder
+
 			/*
 				elevator.Queue[drvOrder.Floor][int(drvOrder.Button)] = true
 				elevio.SetButtonLamp(drvOrder.Button, drvOrder.Floor, true)*/
 		case ExtOrder := <-orderChan.ExtOrder:
-			//AddOrder(ExtOrder)
 			elevator.Queue[ExtOrder.Floor][int(ExtOrder.Button)] = true
 			elevio.SetButtonLamp(ExtOrder.Button, ExtOrder.Floor, true)
 
