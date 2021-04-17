@@ -14,6 +14,9 @@ const numButtons = 3
 
 const interval = 1000 * time.Millisecond
 
+var motorErrorTimer = time.NewTimer(5 * time.Second)
+var connectionErrorTimer = time.NewTimer(3 * time.Second)
+
 //const timeout = 500 * time.Millisecond
 
 func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels, id string, orderChan config.OrderChannels, elevator *config.Elev) {
@@ -38,8 +41,10 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 }
 
 func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChannels,
-	peerUpdateCh chan peers.PeerUpdate, id string, orderChan config.OrderChannels) {
+	peerUpdateCh chan peers.PeerUpdate, id string, orderChan config.OrderChannels, errorChan config.ErrorChannels) {
 	elevMap := make(map[string]config.Elev)
+	//motorErrorMap := make(map[string]time.Timer)
+	connectionErrorMap := make(map[string]*time.Timer)
 	for {
 		select {
 		case p := <-peerUpdateCh:
@@ -53,6 +58,10 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 				orderChan.ExtOrder <- receivedElev.Order
 			}
 
+			//motorErrorMap[receivedElev.ID] = time.NewTimer(5*time.Second)
+			connectionErrorMap[receivedElev.ID] = time.NewTimer(3 * time.Second)
+
+			errorChan.ConnectionErrorMap <- connectionErrorMap
 			elevMap[receivedElev.ID] = receivedElev.Elevator
 			elevChan.MapChan <- elevMap
 

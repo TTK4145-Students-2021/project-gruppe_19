@@ -7,23 +7,16 @@ import (
 	"../driver/elevio"
 )
 
-/*
-func goToFloor(floorRequest int, elevatorState <-chan int) {
-    currentFloor := <- elevatorState
-
-    fmt.Println(currentFloor)
-
-}
-*/
-
 const numFloors = 4
 const numButtons = 3
 const elevSendInterval = 1000 * time.Millisecond //timer for how often we send the current elevator over elevatorchannel
+const timerTime = 4
+
+var engineErrorTimer = time.NewTimer(timerTime * time.Second)
 
 var dir elevio.MotorDirection
 
 func FsmInit(elevator *config.Elev, drvChan config.DriverChannels) {
-
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetMotorDirection(elevio.MD_Down)
 	for {
@@ -45,6 +38,34 @@ func FsmInit(elevator *config.Elev, drvChan config.DriverChannels) {
 
 func FsmUpdateFloor(newFloor int, elevator *config.Elev) { //hvordan dette skal gjøres igjen
 	elevator.Floor = newFloor
+	engineErrorTimer.Reset(timerTime * time.Second)
+
+}
+
+func tryRestartMotor(elevator *config.Elev, drvChan config.DriverChannels) {
+	success := false
+
+	if elevator.Floor < (numFloors - 2) { //last sensed floor
+		elevio.SetMotorDirection(elevio.MD_Up)
+	} else {
+		elevio.SetMotorDirection(elevio.MD_Down)
+	}
+
+	for !success {
+		select {
+		case sensedNewFloor := <-drvChan.DrvFloors:
+			elevator.Floor = sensedNewFloor
+			elevator.State = config.IDLE
+			success = true
+			engineErrorTimer.Reset(timerTime * time.Second)
+			elevio.SetMotorDirection(elevio.MD_Stop)
+			elevio.SetStopLamp(false)
+			println("Restart success!")
+		}
+
+	}
+	return
+
 }
 
 func removeButtonLamps(elevator config.Elev) {
@@ -53,7 +74,8 @@ func removeButtonLamps(elevator config.Elev) {
 	elevio.SetButtonLamp(elevio.BT_HallUp, elevator.Floor, false)
 }
 
-func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.Elev) {
+func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.Elev, drvChan config.DriverChannels) {
+	engineErrorTimer.Stop()
 	for {
 		switch elevator.State {
 		case config.IDLE:
@@ -63,24 +85,25 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 				elevator.Dir = motorDirToElevDir(dir)
 				elevio.SetMotorDirection(dir)
 				elevator.State = config.RUNNING
+				engineErrorTimer.Reset(timerTime * time.Second)
 
 			}
 			if ordersBelow(*elevator) {
-				//println("order below, going down, current Floor: ", Floor)
 				dir = elevio.MD_Down
 				elevator.Dir = motorDirToElevDir(dir)
 				elevio.SetMotorDirection(dir)
 				elevator.State = config.RUNNING
+				engineErrorTimer.Reset(timerTime * time.Second)
 			}
 			elevator.Floor = elevio.GetFloor()
 			if ordersInFloor(*elevator) {
-				//println("order below, going down, current Floor: ", Floor)
 				elevator.State = config.DOOR_OPEN
 			}
+			engineErrorTimer.Reset(timerTime * time.Second)
 
 		case config.RUNNING:
 			elevator.Floor = elevio.GetFloor()
-			if ordersInFloor(*elevator) { // this is the problem : the floor is being kept constant at e.g. 2 while its moving
+			if ordersInFloor(*elevator) {
 				dir = elevio.MD_Stop
 				elevator.Dir = motorDirToElevDir(dir)
 				elevio.SetMotorDirection(dir)
@@ -88,7 +111,7 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 
 			}
 		case config.DOOR_OPEN:
-			//printQueue(*elevator)
+			engineErrorTimer.Stop()
 			elevio.SetDoorOpenLamp(true)
 			dir = elevio.MD_Stop
 			elevio.SetMotorDirection(dir)
@@ -100,7 +123,11 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 			<-timer1.C
 			elevio.SetDoorOpenLamp(false)
 			removeButtonLamps(*elevator)
-			println("DOOR CLOSE")
+			engineErrorTimer.Reset(timerTime * time.Second)
+
+		case config.ERROR:
+			println("In ERROR state. Trying to restart...")
+			tryRestartMotor(elevator, drvChan)
 
 		}
 	}
@@ -110,6 +137,7 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 // InternalControl .. Responsible for internal control of a single elevator
 func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChannels, elevChan config.ElevChannels, elevator *config.Elev) {
 	FsmInit(elevator, drvChan)
+
 	for {
 		select {
 		case floor := <-drvChan.DrvFloors: //Sensor senses a new floor
@@ -146,13 +174,22 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 
 		case <-drvChan.DrvStop: //TODO: add some functionality here
 			elevio.SetMotorDirection(elevio.MD_Stop)
-			time.Sleep(3 * time.Second)
+			elevio.SetStopLamp(true)
 
 		case <-drvChan.DrvObstr: //TODO: add some functionality here
 			elevator.State = config.DOOR_OPEN
 
 		case <-time.After(elevSendInterval): //Updates elevator channel with current elevator every *elevSendInterval*
 			elevChan.Elevator <- *elevator
+
+		case <-engineErrorTimer.C:
+			if !ordersAbove(*elevator) || !ordersBelow(*elevator) || !ordersInFloor(*elevator) { //no orders are left
+				println("motor stopped")
+				elevator.State = config.ERROR
+
+			} else {
+				engineErrorTimer.Stop()
+			}
 		}
 
 	}

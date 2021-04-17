@@ -31,7 +31,7 @@ func printMap(orderMap map[string]config.Elev) {
 	}
 }
 
-func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id string, elev *config.Elev) {
+func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id string, elev *config.Elev, errorChan config.ErrorChannels) {
 
 	orderMap := make(map[string]config.Elev)
 	orderMap[id] = *elev //insert this elevator into map with corresponding ID
@@ -60,6 +60,7 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id s
 			for incId, incElev := range incMap { //TODO: maps give have floor == 0 when elevator starts between floors, needs fixing
 				orderMap[incId] = incElev
 			}
+
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"./FSM"
 	"./config"
@@ -73,19 +74,17 @@ func main() {
 	}
 
 	errorChannels := config.ErrorChannels{
-		MotorErrorMap:      make(chan map[string]int),
-		ConnectionErrorMap: make(chan map[string]int),
+		MotorErrorMap:      make(chan map[string]*time.Timer),
+		ConnectionErrorMap: make(chan map[string]*time.Timer),
 	}
-
-	//channel for keeping the
 
 	go elevio.PollObstructionSwitch(driverChannels.DrvObstr)
 	go elevio.PollButtons(driverChannels.DrvButtons)
 	go elevio.PollFloorSensor(driverChannels.DrvFloors)
 	go elevio.PollStopButton(driverChannels.DrvStop)
-	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels, &elevator)
+	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels, &elevator, driverChannels)
 
-	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator)
+	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator, errorChannels)
 
 	// ... or alternatively, we can use the local IP address.
 	// (But since we can run multiple programs on the same PC, we also append the
@@ -110,7 +109,7 @@ func main() {
 	transmitInt, _ := strconv.Atoi(transmitPort)
 	receiveInt2, _ := strconv.Atoi(receivePort2)
 
-	go peers.Transmitter(transmitInt+1, id, peerTxEnable)
+	go peers.Transmitter(transmitInt+1, id, peerTxEnable) //TODO: use these boys
 	go peers.Receiver(receiveInt+1, peerUpdateCh)
 
 	// We make channels for sending and receiving our custom data types
@@ -130,9 +129,9 @@ func main() {
 
 	//Handles parsing and handling of messages sent and received
 	go elevNet.SendElev(networkTx, elevChannels, id, orderChannels, &elevator)
-	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, orderChannels)
+	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, orderChannels, errorChannels)
 
-	//less go
+	//less go!!!!!
 	FSM.InternalControl(driverChannels, orderChannels, elevChannels, &elevator)
 
 }

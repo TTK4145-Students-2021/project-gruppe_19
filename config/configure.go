@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"../driver/elevio"
 )
 
@@ -13,6 +15,7 @@ const (
 	IDLE      = 0
 	RUNNING   = 1
 	DOOR_OPEN = 2
+	ERROR     = 3
 )
 
 type Direction int
@@ -59,6 +62,6 @@ type NetworkMessage struct {
 }
 
 type ErrorChannels struct {
-	MotorErrorMap      chan map[string]int //ID to timer for motor error
-	ConnectionErrorMap chan map[string]int //ID to timer for connection error
+	MotorErrorMap      chan map[string]*time.Timer //ID to timer for motor error
+	ConnectionErrorMap chan map[string]*time.Timer //ID to timer for connection error
 }
