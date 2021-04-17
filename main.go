@@ -123,7 +123,7 @@ func main() {
 	go bcast.Receiver(receiveInt2, networkRx)
 
 	//Handles parsing and handling of messages sent and received
-	go elevNet.SendElev(networkTx, elevChannels, id, orderChannels)
+	go elevNet.SendElev(networkTx, elevChannels, id, orderChannels, &elevator)
 	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, mapChan, orderChannels)
 
 	//less go

@@ -10,7 +10,7 @@ import (
 
 const numElev = 3
 
-func costFunc(id string, orderMap map[string]config.Elev, orderFloor int) string {
+func costFunc(id string, orderMap map[string]config.Elev, orderFloor int) string { //TODO: some less basic cost function maybe?, works OK though.
 	closestDist := 1000.0
 	bestElevID := id
 	for id, elev := range orderMap {
@@ -40,10 +40,6 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, mapC
 				orderFloor := incomingOrder.Floor
 
 				bestElevID := costFunc(id, orderMap, orderFloor)
-
-				for id, _ := range orderMap {
-					println("id in ordermap: ", id)
-				}
 
 				if bestElevID == id {
 					orderChan.ExtOrder <- incomingOrder

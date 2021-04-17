@@ -2,6 +2,7 @@ package elevNet
 
 import (
 	"fmt"
+	"time"
 
 	"../config"
 	"../driver/elevio"
@@ -11,21 +12,26 @@ import (
 const numFloors = 4
 const numButtons = 3
 
-func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels, id string, orderChan config.OrderChannels) {
-	elev := config.Elev{config.IDLE, config.UP, 0, [numFloors][numButtons]bool{}}
+const interval = 1000 * time.Millisecond
+
+//const timeout = 500 * time.Millisecond
+
+func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels, id string, orderChan config.OrderChannels, elevator *config.Elev) {
+	elev := *elevator
+	dummyButton := elevio.ButtonEvent{-1, elevio.BT_HallDown} //button to send when no order is included in message
 	for {
-		dummyButton := elevio.ButtonEvent{-1, elevio.BT_HallDown}
-		netMessage := config.NetworkMessage{elev, id, false, dummyButton}
-		networkTx <- netMessage
 		select {
+		case <-time.After(interval): //sends this elevator over UDP every *interval*
+			updateMessage := config.NetworkMessage{elev, id, false, dummyButton}
+			networkTx <- updateMessage
+
 		case elev = <-elevChan.Elevator:
-			//heisann:)
+			//update elevator
 
-		case sendOrder := <-orderChan.SendOrder:
-			recipientID := <-orderChan.ExternalID //not sure if this works. might have sync issues
-
-			netMessage := config.NetworkMessage{elev, recipientID, true, sendOrder} //bloat? idk
-			networkTx <- netMessage
+		case sendOrder := <-orderChan.SendOrder: //channel that has included an order to be sent externally
+			recipientID := <-orderChan.ExternalID                                     //not sure if this works. might have sync issues. update: think it works :)
+			orderMessage := config.NetworkMessage{elev, recipientID, true, sendOrder} //sends current elevator with an order
+			networkTx <- orderMessage
 		}
 
 	}
@@ -43,18 +49,14 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 
 		case receivedElev := <-networkRx:
-			if receivedElev.ID == id {
-
-				if receivedElev.OrderIncl { //if message includes order, send it to FSM
-					orderChan.ExtOrder <- receivedElev.Order
-				}
+			if receivedElev.ID == id && receivedElev.OrderIncl {
+				orderChan.ExtOrder <- receivedElev.Order
 			}
 
 			elevMap[receivedElev.ID] = receivedElev.Elevator
 			mapChan <- elevMap
 
 		case thisElev := <-elevChan.Elevator:
-			println("received elevator channel")
 			elevMap[id] = thisElev
 			mapChan <- elevMap
 		}

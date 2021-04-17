@@ -18,6 +18,7 @@ func goToFloor(floorRequest int, elevatorState <-chan int) {
 
 const numFloors = 4
 const numButtons = 3
+const elevSendInterval = 1000 * time.Millisecond //timer for how often we send the current elevator over elevatorchannel
 
 var dir elevio.MotorDirection
 
@@ -143,13 +144,15 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			drvChan.CompletedOrder <- order_Inside_Completed
 			elevChan.Elevator <- *elevator
 
-		case <-drvChan.DrvStop:
+		case <-drvChan.DrvStop: //TODO: add some functionality here
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			time.Sleep(3 * time.Second)
 
-		case <-drvChan.DrvObstr:
+		case <-drvChan.DrvObstr: //TODO: add some functionality here
 			elevator.State = config.DOOR_OPEN
 
+		case <-time.After(elevSendInterval): //Updates elevator channel with current elevator every *elevSendInterval*
+			elevChan.Elevator <- *elevator
 		}
 
 	}
