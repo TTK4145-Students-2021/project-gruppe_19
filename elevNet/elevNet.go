@@ -38,7 +38,7 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 }
 
 func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChannels,
-	peerUpdateCh chan peers.PeerUpdate, id string, mapChan chan map[string]config.Elev, orderChan config.OrderChannels) {
+	peerUpdateCh chan peers.PeerUpdate, id string, orderChan config.OrderChannels) {
 	elevMap := make(map[string]config.Elev)
 	for {
 		select {
@@ -54,11 +54,11 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 			}
 
 			elevMap[receivedElev.ID] = receivedElev.Elevator
-			mapChan <- elevMap
+			elevChan.MapChan <- elevMap
 
 		case thisElev := <-elevChan.Elevator:
 			elevMap[id] = thisElev
-			mapChan <- elevMap
+			elevChan.MapChan <- elevMap
 		}
 	}
 }

@@ -67,11 +67,17 @@ func main() {
 		ExternalID:    make(chan string),
 	}
 
-	elevChannels := config.ElevChannels{
+	elevChannels := config.ElevChannels{ //doesnt need to be a struct as it stands now. TODO: remove struct
 		Elevator: make(chan config.Elev),
+		MapChan:  make(chan map[string]config.Elev),
 	}
 
-	mapChan := make(chan map[string]config.Elev)
+	errorChannels := config.ErrorChannels{
+		MotorErrorMap:      make(chan map[string]int),
+		ConnectionErrorMap: make(chan map[string]int),
+	}
+
+	//channel for keeping the
 
 	go elevio.PollObstructionSwitch(driverChannels.DrvObstr)
 	go elevio.PollButtons(driverChannels.DrvButtons)
@@ -79,7 +85,7 @@ func main() {
 	go elevio.PollStopButton(driverChannels.DrvStop)
 	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels, &elevator)
 
-	go ordermanager.OrderMan(orderChannels, elevChannels, mapChan, id, &elevator)
+	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator)
 
 	// ... or alternatively, we can use the local IP address.
 	// (But since we can run multiple programs on the same PC, we also append the
@@ -124,7 +130,7 @@ func main() {
 
 	//Handles parsing and handling of messages sent and received
 	go elevNet.SendElev(networkTx, elevChannels, id, orderChannels, &elevator)
-	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, mapChan, orderChannels)
+	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, orderChannels)
 
 	//less go
 	FSM.InternalControl(driverChannels, orderChannels, elevChannels, &elevator)

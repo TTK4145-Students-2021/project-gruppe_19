@@ -40,19 +40,25 @@ type DriverChannels struct {
 }
 
 type OrderChannels struct {
-	ExtOrder      chan elevio.ButtonEvent
-	DelegateOrder chan elevio.ButtonEvent
-	SendOrder     chan elevio.ButtonEvent
-	ExternalID    chan string
+	ExtOrder      chan elevio.ButtonEvent //order coming into FSM to be handled
+	DelegateOrder chan elevio.ButtonEvent //order coming from FSM to be delegated to correct elevator
+	SendOrder     chan elevio.ButtonEvent //order coming form ordermanager to be sent to a different elevator
+	ExternalID    chan string             // ID of the elevator which is going to receive order
 }
 
 type ElevChannels struct {
-	Elevator chan Elev
+	Elevator chan Elev //doesnt need its own struct as it is now. TODO: remove
+	MapChan  chan map[string]Elev
 }
 
 type NetworkMessage struct {
-	Elevator  Elev
-	ID        string
-	OrderIncl bool
-	Order     elevio.ButtonEvent
+	Elevator  Elev               //elevator object
+	ID        string             //ID of the elevator being sent
+	OrderIncl bool               //bool to signal if an order is included or not
+	Order     elevio.ButtonEvent //order
+}
+
+type ErrorChannels struct {
+	MotorErrorMap      chan map[string]int //ID to timer for motor error
+	ConnectionErrorMap chan map[string]int //ID to timer for connection error
 }
