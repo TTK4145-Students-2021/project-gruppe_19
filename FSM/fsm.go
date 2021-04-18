@@ -45,13 +45,12 @@ func FsmUpdateFloor(newFloor int, elevator *config.Elev) { //hvordan dette skal 
 func tryRestartMotor(elevator *config.Elev, drvChan config.DriverChannels) {
 	success := false
 
-	if elevator.Floor < (numFloors - 2) { //last sensed floor
-		elevio.SetMotorDirection(elevio.MD_Up)
-	} else {
-		elevio.SetMotorDirection(elevio.MD_Down)
-	}
-
 	for !success {
+		if elevator.Floor < (numFloors - 2) { //last sensed floor
+			elevio.SetMotorDirection(elevio.MD_Up)
+		} else {
+			elevio.SetMotorDirection(elevio.MD_Down)
+		}
 		select {
 		case sensedNewFloor := <-drvChan.DrvFloors:
 			elevator.Floor = sensedNewFloor
@@ -128,6 +127,7 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 		case config.ERROR:
 			println("In ERROR state. Trying to restart...")
 			tryRestartMotor(elevator, drvChan)
+			//add functionality so it can't receive external orders?
 
 		}
 	}
@@ -172,9 +172,26 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			drvChan.CompletedOrder <- order_Inside_Completed
 			elevChan.Elevator <- *elevator
 
-		case <-drvChan.DrvStop: //TODO: add some functionality here
-			elevio.SetMotorDirection(elevio.MD_Stop)
-			elevio.SetStopLamp(true)
+		case <-drvChan.DrvStop: //TODO: check if this is the wanted functionality
+			if elevator.State == config.IDLE {
+				elevio.SetMotorDirection(elevio.MD_Stop)
+				elevio.SetStopLamp(true)
+				println("Starting again in 3 seconds")
+				waited := false
+				stopTimer := time.NewTimer(3 * time.Second)
+				for !waited {
+					select {
+					case <-stopTimer.C:
+						waited = true
+						elevio.SetStopLamp(false)
+					}
+				}
+
+			} else {
+				elevio.SetMotorDirection(elevio.MD_Stop)
+				elevio.SetStopLamp(true)
+				time.Sleep(3 * time.Second) //will go to error state
+			}
 
 		case <-drvChan.DrvObstr: //TODO: add some functionality here
 			elevator.State = config.DOOR_OPEN
