@@ -47,7 +47,7 @@ func tryRestartMotor(elevator *config.Elev, drvChan config.DriverChannels) {
 
 	for !success {
 		if elevator.Floor < (numFloors - 2) { //last sensed floor
-			elevio.SetMotorDirection(elevio.MD_Up)
+			elevio.SetMotorDirection(elevio.MD_Up) //just sends it some safe direction. Not trying for optimality
 		} else {
 			elevio.SetMotorDirection(elevio.MD_Down)
 		}
@@ -127,14 +127,12 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 		case config.ERROR:
 			println("In ERROR state. Trying to restart...")
 			tryRestartMotor(elevator, drvChan)
-			//add functionality so it can't receive external orders?
 
 		}
 	}
 
 }
 
-// InternalControl .. Responsible for internal control of a single elevator
 func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChannels, elevChan config.ElevChannels, elevator *config.Elev) {
 	FsmInit(elevator, drvChan)
 
@@ -146,9 +144,6 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 		case drvOrder := <-drvChan.DrvButtons: // a new button is pressed on this elevator
 			orderChan.DelegateOrder <- drvOrder
 
-			/*
-				elevator.Queue[drvOrder.Floor][int(drvOrder.Button)] = true
-				elevio.SetButtonLamp(drvOrder.Button, drvOrder.Floor, true)*/
 		case ExtOrder := <-orderChan.ExtOrder:
 			elevator.Queue[ExtOrder.Floor][int(ExtOrder.Button)] = true
 			elevio.SetButtonLamp(ExtOrder.Button, ExtOrder.Floor, true)
