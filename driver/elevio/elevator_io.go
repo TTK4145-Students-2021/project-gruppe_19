@@ -132,6 +132,16 @@ func PollObstructionSwitch(receiver chan<- bool) {
 	}
 }
 
+func IntToButtonType(btnInt int) ButtonType {
+	if btnInt == 0 {
+		return BT_HallUp
+	} else if btnInt == 1 {
+		return BT_HallDown
+	} else {
+		return BT_Cab
+	}
+}
+
 func getButton(button ButtonType, floor int) bool {
 	_mtx.Lock()
 	defer _mtx.Unlock()

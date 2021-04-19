@@ -1,8 +1,6 @@
 package config
 
 import (
-	"time"
-
 	"../driver/elevio"
 )
 
@@ -31,6 +29,7 @@ type Elev struct {
 	Dir   Direction
 	Floor int
 	Queue [numFloors][numButtons]bool
+	ID    string
 }
 
 type DriverChannels struct {
@@ -43,14 +42,15 @@ type DriverChannels struct {
 }
 
 type OrderChannels struct {
-	ExtOrder      chan elevio.ButtonEvent //order coming into FSM to be handled
-	DelegateOrder chan elevio.ButtonEvent //order coming from FSM to be delegated to correct elevator
-	SendOrder     chan elevio.ButtonEvent //order coming form ordermanager to be sent to a different elevator
-	ExternalID    chan string             // ID of the elevator which is going to receive order
+	ExtOrder       chan elevio.ButtonEvent //order coming into FSM to be handled
+	DelegateOrder  chan elevio.ButtonEvent //order coming from FSM to be delegated to correct elevator
+	SendOrder      chan elevio.ButtonEvent //order coming form ordermanager to be sent to a different elevator
+	ExternalID     chan string             // ID of the elevator which is going to receive order
+	LostConnection chan string
 }
 
 type ElevChannels struct {
-	Elevator chan Elev //doesnt need its own struct as it is now. TODO: remove
+	Elevator chan Elev
 	MapChan  chan map[string]Elev
 }
 
@@ -59,9 +59,5 @@ type NetworkMessage struct {
 	ID        string             //ID of the elevator being sent
 	OrderIncl bool               //bool to signal if an order is included or not
 	Order     elevio.ButtonEvent //order
-}
-
-type ErrorChannels struct {
-	MotorErrorMap      chan map[string]*time.Timer //ID to timer for motor error
-	ConnectionErrorMap chan map[string]*time.Timer //ID to timer for connection error
+	Connected bool
 }

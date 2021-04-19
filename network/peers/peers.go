@@ -83,6 +83,8 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 			sort.Strings(p.Peers)
 			sort.Strings(p.Lost)
 			peerUpdateCh <- p
+
 		}
+
 	}
 }

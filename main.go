@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
 	"./FSM"
 	"./config"
@@ -21,13 +20,6 @@ func main() {
 
 	const numFloors = 4
 	const numButtons = 3
-
-	var elevator = config.Elev{
-		State: config.IDLE,
-		Dir:   config.STILL,
-		Floor: 0, //denne har ingenting å si siden den oppdateres i FSMinit
-		Queue: [numFloors][numButtons]bool{},
-	}
 
 	//numElevs_p := flag.Int("num_elevs", 3, "Number of elevators working")
 	elevPort_p := flag.String("elev_port", "15657", "The port of the elevator to connect to (for sim purposes)")
@@ -52,6 +44,16 @@ func main() {
 	println("Connecting to server")
 	elevio.Init(hostString, numFloors)
 
+	var elevator = config.Elev{
+		State: config.IDLE,
+		Dir:   config.STILL,
+		Floor: 0, //denne har ingenting å si siden den oppdateres i FSMinit
+		Queue: [numFloors][numButtons]bool{},
+		ID:    id,
+	}
+
+	activeElevators := [3]bool{true, true, true}
+
 	driverChannels := config.DriverChannels{
 		DrvButtons:     make(chan elevio.ButtonEvent),
 		DrvFloors:      make(chan int),
@@ -62,10 +64,11 @@ func main() {
 	}
 
 	orderChannels := config.OrderChannels{
-		ExtOrder:      make(chan elevio.ButtonEvent),
-		DelegateOrder: make(chan elevio.ButtonEvent),
-		SendOrder:     make(chan elevio.ButtonEvent),
-		ExternalID:    make(chan string),
+		ExtOrder:       make(chan elevio.ButtonEvent),
+		DelegateOrder:  make(chan elevio.ButtonEvent),
+		SendOrder:      make(chan elevio.ButtonEvent),
+		ExternalID:     make(chan string),
+		LostConnection: make(chan string),
 	}
 
 	elevChannels := config.ElevChannels{ //doesnt need to be a struct as it stands now. TODO: remove struct
@@ -73,10 +76,7 @@ func main() {
 		MapChan:  make(chan map[string]config.Elev),
 	}
 
-	errorChannels := config.ErrorChannels{
-		MotorErrorMap:      make(chan map[string]*time.Timer),
-		ConnectionErrorMap: make(chan map[string]*time.Timer),
-	}
+	connectionErrorChannel := make(chan string)
 
 	go elevio.PollObstructionSwitch(driverChannels.DrvObstr)
 	go elevio.PollButtons(driverChannels.DrvButtons)
@@ -84,7 +84,7 @@ func main() {
 	go elevio.PollStopButton(driverChannels.DrvStop)
 	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels, &elevator, driverChannels)
 
-	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator, errorChannels)
+	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator, connectionErrorChannel, &activeElevators)
 
 	// ... or alternatively, we can use the local IP address.
 	// (But since we can run multiple programs on the same PC, we also append the
@@ -111,6 +111,7 @@ func main() {
 
 	go peers.Transmitter(transmitInt+1, id, peerTxEnable) //TODO: use these boys
 	go peers.Receiver(receiveInt+1, peerUpdateCh)
+	go peers.Receiver(receiveInt2+1, peerUpdateCh)
 
 	// We make channels for sending and receiving our custom data types
 	networkTx := make(chan config.NetworkMessage)
@@ -129,7 +130,7 @@ func main() {
 
 	//Handles parsing and handling of messages sent and received
 	go elevNet.SendElev(networkTx, elevChannels, id, orderChannels, &elevator)
-	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, orderChannels, errorChannels)
+	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, orderChannels, connectionErrorChannel, &activeElevators)
 
 	//less go!!!!!
 	FSM.InternalControl(driverChannels, orderChannels, elevChannels, &elevator)
