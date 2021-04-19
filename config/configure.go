@@ -29,11 +29,10 @@ const (
 )
 
 type Elev struct {
-	State     ElevatorState
-	Dir       Direction
-	Floor     int
-	Queue     [NumFloors][NumButtons]bool
-	PrevFloor int
+	State ElevatorState
+	Dir   Direction
+	Floor int
+	Queue [NumFloors][NumButtons]bool
 }
 
 type DriverChannels struct {

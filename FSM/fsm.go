@@ -146,7 +146,6 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 		select {
 		case floor := <-drvChan.DrvFloors: //Sensor senses a new floor
 			//FsmUpdateFloor(floor, elevator)
-			elevator.PrevFloor = elevator.Floor
 			elevator.Floor = floor
 			engineErrorTimer.Reset(timerTime * time.Second)
 
