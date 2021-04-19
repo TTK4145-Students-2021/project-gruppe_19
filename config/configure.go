@@ -1,13 +1,15 @@
 package config
 
 import (
-	"../driver/elevio"
+	"p/driver/elevio"
 )
 
 const (
-	NumFloors  int = 4
-	NumElevs       = 3
-	NumButtons     = 3
+	NumFloors       int = 4
+	NumElevs            = 3
+	NumButtons          = 3
+	TimeToMove          = 1
+	TimeToOpenDoors     = 1
 )
 
 type ElevatorState int

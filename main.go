@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strconv"
 
-	"./FSM"
+	"p/FSM"
 
-	"./config"
-	"./driver/elevio"
-	"./elevNet"
-	"./network/bcast"
-	"./network/peers"
-	"./ordermanager"
+	"p/config"
+	"p/driver/elevio"
+	"p/elevNet"
+	"p/network/bcast"
+	"p/network/peers"
+	"p/ordermanager"
 )
 
 func main() {

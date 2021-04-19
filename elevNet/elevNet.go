@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"../config"
-	"../driver/elevio"
-	"../network/peers"
+	"p/config"
+	"p/driver/elevio"
+	"p/network/peers"
 )
 
 const sendingInterval = 100 * time.Millisecond //should sync with elevator channel timing?

@@ -3,11 +3,11 @@ package FSM
 import (
 	"fmt"
 
-	"../config"
-	"../driver/elevio"
+	"p/config"
+	"p/driver/elevio"
 )
 
-func ordersAbove(elevator config.Elev) bool {
+func OrdersAbove(elevator config.Elev) bool {
 	currentFloor := elevator.Floor
 	for i := currentFloor + 1; i < config.NumFloors; i++ {
 		if elevator.Queue[i][0] || elevator.Queue[i][1] || elevator.Queue[i][2] {
@@ -17,7 +17,7 @@ func ordersAbove(elevator config.Elev) bool {
 	return false
 }
 
-func ordersBelow(elevator config.Elev) bool {
+func OrdersBelow(elevator config.Elev) bool {
 	currentFloor := elevator.Floor
 	for i := currentFloor - 1; i > -1; i-- {
 		if elevator.Queue[i][0] || elevator.Queue[i][1] || elevator.Queue[i][2] {
@@ -27,7 +27,7 @@ func ordersBelow(elevator config.Elev) bool {
 	return false
 }
 
-func ordersInFloor(elevator config.Elev) bool {
+func OrdersInFloor(elevator config.Elev) bool {
 	if elevator.Floor >= 0 {
 
 		for btn := 0; btn < 3; btn++ {
@@ -40,9 +40,9 @@ func ordersInFloor(elevator config.Elev) bool {
 					return true
 				} else if elevator.Floor == 0 || elevator.Floor == (config.NumFloors-1) { //takes care of the edge cases
 					return true
-				} else if elevator.Dir == config.DOWN && (btn == 0) && !ordersBelow(elevator) {
+				} else if elevator.Dir == config.DOWN && (btn == 0) && !OrdersBelow(elevator) {
 					return true
-				} else if elevator.Dir == config.UP && (btn == 1) && !ordersAbove(elevator) {
+				} else if elevator.Dir == config.UP && (btn == 1) && !OrdersAbove(elevator) {
 					return true
 				} else if elevator.Dir == config.STILL {
 					return true
@@ -56,7 +56,7 @@ func ordersInFloor(elevator config.Elev) bool {
 
 }
 
-func deleteOrder(elevator *config.Elev) {
+func DeleteOrder(elevator *config.Elev) {
 	for i := 0; i < config.NumButtons; i++ {
 		elevator.Queue[elevator.Floor][i] = false
 	}

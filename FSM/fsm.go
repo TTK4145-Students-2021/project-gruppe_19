@@ -3,8 +3,8 @@ package FSM
 import (
 	"time"
 
-	"../config"
-	"../driver/elevio"
+	"p/config"
+	"p/driver/elevio"
 )
 
 const elevSendInterval = 100 * time.Millisecond //timer for how often we send the current elevator over elevatorchannel
@@ -76,7 +76,7 @@ func Fsm(elevChan config.ElevChannels, elevator *config.Elev, drvChan config.Dri
 	for {
 		switch elevator.State {
 		case config.IDLE:
-			if ordersAbove(*elevator) {
+			if OrdersAbove(*elevator) {
 				//println("order above,going up, current Floor: ", Floor)
 				dir = elevio.MD_Up
 				elevator.Dir = motorDirToElevDir(dir)
@@ -85,7 +85,7 @@ func Fsm(elevChan config.ElevChannels, elevator *config.Elev, drvChan config.Dri
 				engineErrorTimer.Reset(timerTime * time.Second)
 
 			}
-			if ordersBelow(*elevator) {
+			if OrdersBelow(*elevator) {
 				dir = elevio.MD_Down
 				elevator.Dir = motorDirToElevDir(dir)
 				elevio.SetMotorDirection(dir)
@@ -93,14 +93,14 @@ func Fsm(elevChan config.ElevChannels, elevator *config.Elev, drvChan config.Dri
 				engineErrorTimer.Reset(timerTime * time.Second)
 			}
 			elevator.Floor = elevio.GetFloor()
-			if ordersInFloor(*elevator) {
+			if OrdersInFloor(*elevator) {
 				elevator.State = config.DOOR_OPEN
 			}
 			engineErrorTimer.Reset(timerTime * time.Second)
 
 		case config.RUNNING:
 			elevator.Floor = elevio.GetFloor()
-			if ordersInFloor(*elevator) {
+			if OrdersInFloor(*elevator) {
 				dir = elevio.MD_Stop
 				elevator.Dir = motorDirToElevDir(dir)
 				elevio.SetMotorDirection(dir)
@@ -152,7 +152,7 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 		case <-drvChan.DoorsOpen:
 			elevChan.Elevator <- *elevator
 			order1, order2 := getOrder(elevator)
-			deleteOrder(elevator)
+			DeleteOrder(elevator)
 			if order1.Floor != -1 {
 				orderChan.CompletedOrder <- order1
 			}
@@ -188,7 +188,7 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			elevChan.Elevator <- *elevator
 
 		case <-engineErrorTimer.C:
-			if !ordersAbove(*elevator) || !ordersBelow(*elevator) || !ordersInFloor(*elevator) { //no orders are left
+			if !OrdersAbove(*elevator) || !OrdersBelow(*elevator) || !OrdersInFloor(*elevator) { //no orders are left
 				println("motor stopped")
 				elevator.State = config.ERROR
 

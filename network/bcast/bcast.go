@@ -6,7 +6,7 @@ import (
 	"net"
 	"reflect"
 
-	"../conn"
+	"p/network/conn"
 )
 
 // Encodes received values from `chans` into type-tagged JSON, then broadcasts
