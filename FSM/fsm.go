@@ -137,6 +137,7 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 		select {
 		case floor := <-drvChan.DrvFloors: //Sensor senses a new floor
 			//FsmUpdateFloor(floor, elevator)
+			elevator.PrevFloor = elevator.Floor
 			elevator.Floor = floor
 			engineErrorTimer.Reset(timerTime * time.Second)
 
@@ -154,10 +155,9 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			deleteOrder(elevator)
 			if order1.Floor != -1 {
 				orderChan.CompletedOrder <- order1
-			} else if order2.Floor != -1 {
+			}
+			if order2.Floor != -1 {
 				orderChan.CompletedOrder <- order2
-			} else {
-				//do nothing
 			}
 
 		case <-drvChan.DrvStop: //TODO: check if this is the wanted functionality

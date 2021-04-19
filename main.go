@@ -40,10 +40,11 @@ func main() {
 	elevio.Init(hostString, config.NumFloors)
 
 	var elevator = config.Elev{
-		State: config.IDLE,
-		Dir:   config.STILL,
-		Floor: 0, //denne har ingenting å si siden den oppdateres i FSMinit
-		Queue: [config.NumFloors][config.NumButtons]bool{},
+		State:     config.IDLE,
+		Dir:       config.STILL,
+		Floor:     0, //denne har ingenting å si siden den oppdateres i FSMinit
+		PrevFloor: 0,
+		Queue:     [config.NumFloors][config.NumButtons]bool{},
 	}
 
 	activeElevators := [3]bool{true, true, true}

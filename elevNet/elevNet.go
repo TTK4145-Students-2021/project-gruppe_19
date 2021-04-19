@@ -11,12 +11,13 @@ import (
 )
 
 const sendingInterval = 100 * time.Millisecond //should sync with elevator channel timing?
-const orderInterval = 1000 * time.Millisecond  //how long each orderMessage should be sent
+//const orderInterval = 10
 
 func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels, id string, orderChan config.OrderChannels, elevator *config.Elev) {
 	elev := config.Elev{}
 	dummyButton := elevio.ButtonEvent{-1, elevio.BT_HallDown} //button to send when no order is included in message, or to set lights, but not take order
 	turnOffLight := false
+	sendingQueue := make(map[string]elevio.ButtonEvent)
 	for {
 		select {
 		case <-time.After(sendingInterval): //sends this elevator over UDP every *interval*
@@ -30,17 +31,24 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 			//update elevator
 
 		case sendOrder := <-orderChan.SendOrder: //channel that has included an order to be sent externally
-			recipientID := <-orderChan.ExternalID                                                  //not sure if this works. might have sync issues. update: think it works :)
+			recipientID := <-orderChan.ExternalID
+			sendingQueue[recipientID] = sendOrder
+			/*for sendID, order := range sendingQueue {
+				go func() { //this works. Not sure if intended, but elevators still run
+					orderMessage := config.NetworkMessage{elev, sendID, true, order, true, false}
+					networkTx <- orderMessage
+					time.Sleep(orderInterval * time.Millisecond)
+				}()
+				println("Sent ", sendID)
+			}*/
+
+			//not sure if this works. might have sync issues. update: think it works :)
 			orderMessage := config.NetworkMessage{elev, recipientID, true, sendOrder, true, false} //sends current elevator with an order
 			networkTx <- orderMessage
 
 		case completedOrder := <-orderChan.CompletedOrder:
 			dummyButton = completedOrder
 			turnOffLight = true
-
-		case <-time.After(orderInterval):
-			//legg til smart kode her
-
 		}
 
 	}
@@ -84,7 +92,8 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 				elevio.SetButtonLamp(receivedElev.Order.Button, receivedElev.Order.Floor, true)
 			}
 			if receivedElev.TurnOffOrderLight {
-				elevio.SetButtonLamp(receivedElev.Order.Button, receivedElev.Order.Floor, false)
+				elevio.SetButtonLamp(elevio.BT_HallDown, receivedElev.Order.Floor, false)
+				elevio.SetButtonLamp(elevio.BT_HallUp, receivedElev.Order.Floor, false)
 			}
 			idAsInt, _ := strconv.Atoi(receivedElev.ID)
 			elevatorArray[idAsInt-1] = receivedElev.Elevator

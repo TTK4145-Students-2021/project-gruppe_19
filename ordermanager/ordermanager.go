@@ -13,7 +13,8 @@ func costFunc(elevatorArray [3]config.Elev, orderFloor int, activeElevators *[3]
 	bestElevID := " "
 	for elevIndx := 0; elevIndx < config.NumElevs; elevIndx++ {
 		elev := elevatorArray[elevIndx]
-		if math.Abs(float64(elev.Floor-orderFloor)) < float64(closestDist) && (elev.State != config.ERROR) && activeElevators[elevIndx] && elev.Floor >= 0 { //if in error state, do not receive more orders
+		if math.Abs(float64(elev.Floor-orderFloor)) < float64(closestDist) &&
+			(elev.State != config.ERROR) && activeElevators[elevIndx] && elev.Floor >= 0 { //if in error state, do not receive more orders
 			closestDist = math.Abs(float64(elev.Floor - orderFloor))
 			bestElevID = strconv.Itoa(elevIndx + 1)
 		}
