@@ -64,6 +64,7 @@ func main() {
 		SendOrder:      make(chan elevio.ButtonEvent),
 		ExternalID:     make(chan string),
 		LostConnection: make(chan string),
+		CompletedOrder: make(chan elevio.ButtonEvent),
 	}
 
 	elevChannels := config.ElevChannels{ //doesnt need to be a struct as it stands now. TODO: remove struct
@@ -76,7 +77,7 @@ func main() {
 	go elevio.PollButtons(driverChannels.DrvButtons)
 	go elevio.PollFloorSensor(driverChannels.DrvFloors)
 	go elevio.PollStopButton(driverChannels.DrvStop)
-	go FSM.Fsm(driverChannels.DoorsOpen, elevChannels, &elevator, driverChannels)
+	go FSM.Fsm(elevChannels, &elevator, driverChannels)
 
 	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator, connectionErrorChannel, &activeElevators, &elevatorArray)
 

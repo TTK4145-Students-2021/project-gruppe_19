@@ -71,7 +71,7 @@ func removeButtonLamps(elevator config.Elev) {
 	elevio.SetButtonLamp(elevio.BT_HallUp, elevator.Floor, false)
 }
 
-func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.Elev, drvChan config.DriverChannels) {
+func Fsm(elevChan config.ElevChannels, elevator *config.Elev, drvChan config.DriverChannels) {
 	engineErrorTimer.Stop()
 	for {
 		switch elevator.State {
@@ -113,13 +113,12 @@ func Fsm(doorsOpen chan<- int, elevChan config.ElevChannels, elevator *config.El
 			dir = elevio.MD_Stop
 			elevio.SetMotorDirection(dir)
 			elevio.SetFloorIndicator(elevator.Floor)
-			DeleteOrder(elevator)
 			elevator.State = config.IDLE
-			doorsOpen <- elevator.Floor
-			timer1 := time.NewTimer(2 * time.Second)
-			<-timer1.C
-			elevio.SetDoorOpenLamp(false)
+			drvChan.DoorsOpen <- elevator.Floor
 			removeButtonLamps(*elevator)
+			doorTimer := time.NewTimer(2 * time.Second)
+			<-doorTimer.C
+			elevio.SetDoorOpenLamp(false)
 			engineErrorTimer.Reset(timerTime * time.Second)
 
 		case config.ERROR:
@@ -143,6 +142,7 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 
 		case drvOrder := <-drvChan.DrvButtons: // a new button is pressed on this elevator
 			orderChan.DelegateOrder <- drvOrder
+			elevio.SetButtonLamp(drvOrder.Button, drvOrder.Floor, true)
 
 		case ExtOrder := <-orderChan.ExtOrder:
 			elevator.Queue[ExtOrder.Floor][int(ExtOrder.Button)] = true
@@ -150,6 +150,15 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 
 		case <-drvChan.DoorsOpen:
 			elevChan.Elevator <- *elevator
+			order1, order2 := getOrder(elevator)
+			deleteOrder(elevator)
+			if order1.Floor != -1 {
+				orderChan.CompletedOrder <- order1
+			} else if order2.Floor != -1 {
+				orderChan.CompletedOrder <- order2
+			} else {
+				//do nothing
+			}
 
 		case <-drvChan.DrvStop: //TODO: check if this is the wanted functionality
 			if elevator.State == config.IDLE {

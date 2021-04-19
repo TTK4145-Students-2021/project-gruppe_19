@@ -56,10 +56,21 @@ func ordersInFloor(elevator config.Elev) bool {
 
 }
 
-func DeleteOrder(elevator *config.Elev) {
+func deleteOrder(elevator *config.Elev) {
 	for i := 0; i < config.NumButtons; i++ {
 		elevator.Queue[elevator.Floor][i] = false
 	}
+}
+
+func getOrder(elevator *config.Elev) (elevio.ButtonEvent, elevio.ButtonEvent) {
+	button1 := elevio.ButtonEvent{Floor: -1, Button: elevio.BT_Cab}
+	button2 := elevio.ButtonEvent{Floor: -1, Button: elevio.BT_Cab}
+	if elevator.Queue[elevator.Floor][elevio.BT_HallUp] {
+		button1 = elevio.ButtonEvent{Floor: elevator.Floor, Button: elevio.BT_HallUp}
+	} else if elevator.Queue[elevator.Floor][elevio.BT_HallDown] {
+		button2 = elevio.ButtonEvent{Floor: elevator.Floor, Button: elevio.BT_HallDown}
+	}
+	return button1, button2
 }
 
 func DeleteAllOrders(elevator *config.Elev) {

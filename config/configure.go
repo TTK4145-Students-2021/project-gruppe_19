@@ -49,6 +49,7 @@ type OrderChannels struct {
 	SendOrder      chan elevio.ButtonEvent //order coming form ordermanager to be sent to a different elevator
 	ExternalID     chan string             // ID of the elevator which is going to receive order
 	LostConnection chan string
+	CompletedOrder chan elevio.ButtonEvent
 }
 
 type ElevChannels struct {
@@ -56,9 +57,10 @@ type ElevChannels struct {
 }
 
 type NetworkMessage struct {
-	Elevator  Elev               //elevator object
-	ID        string             //ID of the elevator being sent
-	OrderIncl bool               //bool to signal if an order is included or not
-	Order     elevio.ButtonEvent //order
-	Connected bool
+	Elevator          Elev               //elevator object
+	ID                string             //ID of the elevator being sent
+	TakeOrder         bool               //bool to signal if an order is included or not
+	Order             elevio.ButtonEvent //order
+	SetOrderLight     bool
+	TurnOffOrderLight bool
 }
