@@ -17,8 +17,10 @@ const interval = 1000 * time.Millisecond
 
 const numElevs = 3
 
+var iteration = 0
+
 func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels, id string, orderChan config.OrderChannels, elevator *config.Elev) {
-	elev := *elevator
+	elev := config.Elev{}
 	dummyButton := elevio.ButtonEvent{-1, elevio.BT_HallDown} //button to send when no order is included in message
 	for {
 		select {
@@ -39,8 +41,9 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 }
 
 func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChannels,
-	peerUpdateCh chan peers.PeerUpdate, id string, orderChan config.OrderChannels, connErrorChan chan string, activeElevators *[3]bool) {
-	elevMap := make(map[string]config.Elev)
+	peerUpdateCh chan peers.PeerUpdate, id string, orderChan config.OrderChannels, connErrorChan chan string,
+	activeElevators *[3]bool, elevatorArray *[3]config.Elev) {
+	//elevMap := make(map[string]config.Elev)
 
 	for {
 		select {
@@ -72,16 +75,24 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 			if receivedElev.ID == id && receivedElev.OrderIncl {
 				orderChan.ExtOrder <- receivedElev.Order
 			}
-			elevMap[receivedElev.ID] = receivedElev.Elevator //update elevatorMap
-			elevChan.MapChan <- elevMap
+			idAsInt, _ := strconv.Atoi(receivedElev.ID)
+			go func() { elevatorArray[idAsInt-1] = receivedElev.Elevator }()
+
+			//elevMap[receivedElev.ID] = receivedElev.Elevator //update elevatorMap
+			//elevChan.MapChan <- elevMap
 
 		case thisElev := <-elevChan.Elevator:
-			elevMap[id] = thisElev
-			elevChan.MapChan <- elevMap
-			for i := 0; i < 3; i++ {
-				println("Elev: ", i+1, " ", activeElevators[i])
-			}
-		}
+			idAsInt, _ := strconv.Atoi(id)
+			go func() { elevatorArray[idAsInt-1] = thisElev }()
 
+			if iteration%20 == 0 {
+				for i := 0; i < 3; i++ {
+					println("Elev ", i+1, " floor: ", elevatorArray[i].Floor)
+				}
+				println(" ")
+			}
+			//map update here before
+			iteration++
+		}
 	}
 }

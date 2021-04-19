@@ -9,7 +9,7 @@ import (
 
 const numFloors = 4
 const numButtons = 3
-const elevSendInterval = 1000 * time.Millisecond //timer for how often we send the current elevator over elevatorchannel
+const elevSendInterval = 100 * time.Millisecond //timer for how often we send the current elevator over elevatorchannel
 const timerTime = 4
 
 var engineErrorTimer = time.NewTimer(timerTime * time.Second)
@@ -139,7 +139,9 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 	for {
 		select {
 		case floor := <-drvChan.DrvFloors: //Sensor senses a new floor
-			FsmUpdateFloor(floor, elevator)
+			//FsmUpdateFloor(floor, elevator)
+			elevator.Floor = floor
+			engineErrorTimer.Reset(timerTime * time.Second)
 
 		case drvOrder := <-drvChan.DrvButtons: // a new button is pressed on this elevator
 			orderChan.DelegateOrder <- drvOrder
@@ -148,23 +150,7 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			elevator.Queue[ExtOrder.Floor][int(ExtOrder.Button)] = true
 			elevio.SetButtonLamp(ExtOrder.Button, ExtOrder.Floor, true)
 
-		case floor := <-drvChan.DoorsOpen:
-
-			order_OutsideUp_Completed := elevio.ButtonEvent{
-				Floor:  floor,
-				Button: elevio.BT_HallUp,
-			}
-			order_OutsideDown_Completed := elevio.ButtonEvent{
-				Floor:  floor,
-				Button: elevio.BT_HallDown,
-			}
-			order_Inside_Completed := elevio.ButtonEvent{
-				Floor:  floor,
-				Button: elevio.BT_Cab,
-			}
-			drvChan.CompletedOrder <- order_OutsideUp_Completed
-			drvChan.CompletedOrder <- order_OutsideDown_Completed
-			drvChan.CompletedOrder <- order_Inside_Completed
+		case <-drvChan.DoorsOpen:
 			elevChan.Elevator <- *elevator
 
 		case <-drvChan.DrvStop: //TODO: check if this is the wanted functionality
@@ -188,7 +174,7 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 				time.Sleep(3 * time.Second) //will go to error state
 			}
 
-		case <-drvChan.DrvObstr: //TODO: add some functionality here
+		case <-drvChan.DrvObstr: //TODO: add some functionality here?
 			elevator.State = config.DOOR_OPEN
 
 		case <-time.After(elevSendInterval): //Updates elevator channel with current elevator every *elevSendInterval*

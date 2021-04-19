@@ -51,7 +51,7 @@ type OrderChannels struct {
 
 type ElevChannels struct {
 	Elevator chan Elev
-	MapChan  chan map[string]Elev
+	//MapChan  chan map[string]Elev
 }
 
 type NetworkMessage struct {
