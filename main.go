@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"strconv"
 
 	"./FSM"
@@ -11,7 +10,6 @@ import (
 	"./driver/elevio"
 	"./elevNet"
 	"./network/bcast"
-	"./network/localip"
 	"./network/peers"
 	"./ordermanager"
 )
@@ -49,7 +47,6 @@ func main() {
 		Dir:   config.STILL,
 		Floor: 0, //denne har ingenting å si siden den oppdateres i FSMinit
 		Queue: [numFloors][numButtons]bool{},
-		ID:    id,
 	}
 
 	activeElevators := [3]bool{true, true, true}
@@ -74,7 +71,6 @@ func main() {
 
 	elevChannels := config.ElevChannels{ //doesnt need to be a struct as it stands now. TODO: remove struct
 		Elevator: make(chan config.Elev),
-		//MapChan:  make(chan map[string]config.Elev),
 	}
 
 	connectionErrorChannel := make(chan string)
@@ -87,46 +83,25 @@ func main() {
 
 	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator, connectionErrorChannel, &activeElevators, &elevatorArray)
 
-	// ... or alternatively, we can use the local IP address.
-	// (But since we can run multiple programs on the same PC, we also append the
-	//  process ID)
-	if id == "" {
-		localIP, err := localip.LocalIP()
-		if err != nil {
-			fmt.Println(err)
-			localIP = "DISCONNECTED"
-		}
-		id = fmt.Sprintf("peer-%s-%d", localIP, os.Getpid())
-	}
-
-	// We make a channel for receiving updates on the id's of the peers that are
-	//  alive on the network
 	peerUpdateCh := make(chan peers.PeerUpdate)
-	// We can disable/enable the transmitter after it has been started.
-	// This could be used to signal that we are somehow "unavailable".
 	peerTxEnable := make(chan bool)
 	//elevInt, _ := strconv.Atoi(elevPort)
 	receiveInt, _ := strconv.Atoi(receivePort)
 	transmitInt, _ := strconv.Atoi(transmitPort)
 	receiveInt2, _ := strconv.Atoi(receivePort2)
 
-	go peers.Transmitter(transmitInt+1, id, peerTxEnable) //TODO: use these boys
+	go peers.Transmitter(transmitInt+1, id, peerTxEnable)
 	go peers.Receiver(receiveInt+1, peerUpdateCh)
 	go peers.Receiver(receiveInt2+1, peerUpdateCh)
 
-	// We make channels for sending and receiving our custom data types
 	networkTx := make(chan config.NetworkMessage)
 	networkRx := make(chan config.NetworkMessage)
-	// ... and start the transmitter/receiver pair on some port
-	// These functions can take any number of channels! It is also possible to
-	//  start multiple transmitters/receivers on the same port.
 
 	//broadcasting and receiving to/from the first elevator
 	go bcast.Transmitter(transmitInt, networkTx)
 	go bcast.Receiver(receiveInt, networkRx)
 
 	//broadcasting and receiving to/from the second elevator
-	//go bcast.Transmitter(transmitInt, networkTx)
 	go bcast.Receiver(receiveInt2, networkRx)
 
 	//Handles parsing and handling of messages sent and received

@@ -27,10 +27,8 @@ func costFunc(elevatorArray [3]config.Elev, orderFloor int, activeElevators *[3]
 
 }
 
-func transferHallOrders(lostElevator config.Elev, activeElevators *[3]bool, orderChan config.OrderChannels, id string,
+func transferOrders(lostElevator config.Elev, activeElevators *[3]bool, orderChan config.OrderChannels, id string,
 	elevatorArray *[3]config.Elev, lostElevatorID string) {
-	//delete(orderMap, lostElevatorID) //just to make sure
-	println("In transfer hall order")
 	for floor := 0; floor < numFloors; floor++ {
 		for button := elevio.BT_HallUp; button < elevio.BT_Cab; button++ {
 			if lostElevator.Queue[floor][button] {
@@ -52,18 +50,8 @@ func transferHallOrders(lostElevator config.Elev, activeElevators *[3]bool, orde
 	}
 }
 
-func printMap(orderMap map[string]config.Elev) {
-	for id, elev := range orderMap {
-		println("ElevatorID: ", id)
-		println("Elevator Floor: ", elev.Floor)
-	}
-}
-
 func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id string, elev *config.Elev, connErrorChan chan string,
 	activeElevators *[3]bool, elevatorArray *[3]config.Elev) {
-
-	//orderMap := make(map[string]config.Elev) //map which keeps track of all elevators
-	//orderMap[id] = *elev                     //insert this elevator into map with corresponding ID
 	idAsInt, _ := strconv.Atoi(id)
 	elevatorArray[idAsInt-1] = *elev
 	for {
@@ -88,18 +76,12 @@ func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id s
 
 				}
 			}
-			//fmt.Println("selected elev: ", bestElevID)
-			/*
-				case incMap := <-elevChan.MapChan: //update map
-					for incId, incElev := range incMap { //TODO: maps give have floor == 0 when elevator starts between floors, needs fixing
-						orderMap[incId] = incElev
-					}*/
 
 		case lostElevatorID := <-orderChan.LostConnection:
-			println("lost evel ID: ", lostElevatorID)
+			println("lost elev ID: ", lostElevatorID)
 			idAsInt, _ := strconv.Atoi(lostElevatorID)
-			lostElevator := elevatorArray[idAsInt-1] //used to be map here
-			go transferHallOrders(lostElevator, activeElevators, orderChan, id, elevatorArray, lostElevatorID)
+			lostElevator := elevatorArray[idAsInt-1]
+			go transferOrders(lostElevator, activeElevators, orderChan, id, elevatorArray, lostElevatorID)
 		}
 	}
 

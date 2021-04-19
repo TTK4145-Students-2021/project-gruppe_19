@@ -29,7 +29,6 @@ type Elev struct {
 	Dir   Direction
 	Floor int
 	Queue [numFloors][numButtons]bool
-	ID    string
 }
 
 type DriverChannels struct {
@@ -51,7 +50,6 @@ type OrderChannels struct {
 
 type ElevChannels struct {
 	Elevator chan Elev
-	//MapChan  chan map[string]Elev
 }
 
 type NetworkMessage struct {

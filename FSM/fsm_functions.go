@@ -7,13 +7,6 @@ import (
 	"../driver/elevio"
 )
 
-type Keypress struct {
-	Floor              int
-	Btn                elevio.ButtonType
-	DesignatedElevator int
-	Done               bool
-}
-
 func ordersAbove(elevator config.Elev) bool {
 	currentFloor := elevator.Floor
 	for i := currentFloor + 1; i < numFloors; i++ {
