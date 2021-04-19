@@ -126,7 +126,7 @@ func main() {
 	go bcast.Receiver(receiveInt, networkRx)
 
 	//broadcasting and receiving to/from the second elevator
-	go bcast.Transmitter(transmitInt, networkTx)
+	//go bcast.Transmitter(transmitInt, networkTx)
 	go bcast.Receiver(receiveInt2, networkRx)
 
 	//Handles parsing and handling of messages sent and received

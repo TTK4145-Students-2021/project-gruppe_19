@@ -13,7 +13,7 @@ import (
 const numFloors = 4
 const numButtons = 3
 
-const interval = 1000 * time.Millisecond
+const interval = 100 * time.Millisecond //should sync with elevator channel timing
 
 const numElevs = 3
 
@@ -76,14 +76,15 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 				orderChan.ExtOrder <- receivedElev.Order
 			}
 			idAsInt, _ := strconv.Atoi(receivedElev.ID)
-			go func() { elevatorArray[idAsInt-1] = receivedElev.Elevator }()
+			//println("Received elevator ID, FLOOR: ", receivedElev.ID, " ", receivedElev.Elevator.Floor)
+			elevatorArray[idAsInt-1] = receivedElev.Elevator
 
 			//elevMap[receivedElev.ID] = receivedElev.Elevator //update elevatorMap
 			//elevChan.MapChan <- elevMap
 
 		case thisElev := <-elevChan.Elevator:
 			idAsInt, _ := strconv.Atoi(id)
-			go func() { elevatorArray[idAsInt-1] = thisElev }()
+			elevatorArray[idAsInt-1] = thisElev
 
 			if iteration%20 == 0 {
 				for i := 0; i < 3; i++ {
@@ -91,8 +92,8 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 				}
 				println(" ")
 			}
-			//map update here before
 			iteration++
+			//map update here before
 		}
 	}
 }
