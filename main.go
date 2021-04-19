@@ -47,8 +47,8 @@ func main() {
 		Queue:     [config.NumFloors][config.NumButtons]bool{},
 	}
 
-	activeElevators := [3]bool{true, true, true}
-	elevatorArray := [3]config.Elev{}
+	activeElevators := [config.NumElevs]bool{true, true, true}
+	elevatorArray := [config.NumElevs]config.Elev{}
 
 	driverChannels := config.DriverChannels{
 		DrvButtons:     make(chan elevio.ButtonEvent),

@@ -8,7 +8,7 @@ import (
 	"../driver/elevio"
 )
 
-func costFunc(elevatorArray [3]config.Elev, orderFloor int, activeElevators *[3]bool) string { //TODO: some less basic cost function maybe?, works OK though.
+func costFunc(elevatorArray [3]config.Elev, orderFloor int, activeElevators *[config.NumElevs]bool) string { //TODO: some less basic cost function maybe?, works OK though.
 	closestDist := 1000.0 //just something large
 	bestElevID := " "
 	for elevIndx := 0; elevIndx < config.NumElevs; elevIndx++ {
@@ -48,7 +48,7 @@ func transferOrders(lostElevator config.Elev, activeElevators *[3]bool, orderCha
 }
 
 func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id string, elev *config.Elev, connErrorChan chan string,
-	activeElevators *[3]bool, elevatorArray *[3]config.Elev) {
+	activeElevators *[config.NumElevs]bool, elevatorArray *[3]config.Elev) {
 	idAsInt, _ := strconv.Atoi(id)
 	elevatorArray[idAsInt-1] = *elev
 	for {

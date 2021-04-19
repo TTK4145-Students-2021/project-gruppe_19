@@ -56,7 +56,7 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 
 func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChannels,
 	peerUpdateCh chan peers.PeerUpdate, id string, orderChan config.OrderChannels, connErrorChan chan string,
-	activeElevators *[3]bool, elevatorArray *[3]config.Elev) {
+	activeElevators *[config.NumElevs]bool, elevatorArray *[config.NumElevs]config.Elev) {
 	//elevMap := make(map[string]config.Elev)
 
 	for {
