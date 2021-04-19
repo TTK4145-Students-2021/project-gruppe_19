@@ -121,10 +121,19 @@ func Fsm(elevChan config.ElevChannels, elevator *config.Elev, drvChan config.Dri
 			elevio.SetDoorOpenLamp(false)
 			engineErrorTimer.Reset(timerTime * time.Second)
 
-		case config.ERROR:
+		case config.ERROR: //motor is out. Try to restart.
 			println("In ERROR state. Trying to restart...")
 			tryRestartMotor(elevator, drvChan)
 
+		case config.OBSTRUCTED: //waits until obstruction is pressed again to resume
+			engineErrorTimer.Stop()
+			elevio.SetDoorOpenLamp(true)
+			dir = elevio.MD_Stop
+			elevio.SetMotorDirection(dir)
+			elevio.SetFloorIndicator(elevator.Floor)
+			<-drvChan.DrvObstr
+			elevio.SetDoorOpenLamp(false)
+			elevator.State = config.IDLE
 		}
 	}
 
@@ -153,14 +162,14 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			elevChan.Elevator <- *elevator
 			order1, order2 := getOrder(elevator)
 			deleteOrder(elevator)
-			if order1.Floor != -1 {
+			if order1.Floor != -1 { //only valid orders get sent
 				orderChan.CompletedOrder <- order1
 			}
 			if order2.Floor != -1 {
 				orderChan.CompletedOrder <- order2
 			}
 
-		case <-drvChan.DrvStop: //TODO: check if this is the wanted functionality
+		case <-drvChan.DrvStop:
 			if elevator.State == config.IDLE {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 				elevio.SetStopLamp(true)
@@ -182,7 +191,7 @@ func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChanne
 			}
 
 		case <-drvChan.DrvObstr: //TODO: add some functionality here?
-			elevator.State = config.DOOR_OPEN
+			elevator.State = config.OBSTRUCTED
 
 		case <-time.After(elevSendInterval): //Updates elevator channel with current elevator every *elevSendInterval*
 			elevChan.Elevator <- *elevator

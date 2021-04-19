@@ -13,10 +13,11 @@ const (
 type ElevatorState int
 
 const (
-	IDLE      = 0
-	RUNNING   = 1
-	DOOR_OPEN = 2
-	ERROR     = 3
+	IDLE       = 0
+	RUNNING    = 1
+	DOOR_OPEN  = 2
+	ERROR      = 3
+	OBSTRUCTED = 4
 )
 
 type Direction int
