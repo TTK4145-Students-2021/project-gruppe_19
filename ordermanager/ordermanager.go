@@ -8,7 +8,7 @@ import (
 	"../driver/elevio"
 )
 
-func costFunc(elevatorArray [3]config.Elev, orderFloor int, activeElevators *[config.NumElevs]bool) string { //TODO: some less basic cost function maybe?, works OK though.
+func costFunc(elevatorArray [config.NumElevs]config.Elev, orderFloor int, activeElevators *[config.NumElevs]bool) string { //TODO: some less basic cost function maybe?, works OK though.
 	closestDist := 1000.0 //just something large
 	bestElevID := " "
 	for elevIndx := 0; elevIndx < config.NumElevs; elevIndx++ {
@@ -24,8 +24,8 @@ func costFunc(elevatorArray [3]config.Elev, orderFloor int, activeElevators *[co
 
 }
 
-func transferOrders(lostElevator config.Elev, activeElevators *[3]bool, orderChan config.OrderChannels, id string,
-	elevatorArray *[3]config.Elev, lostElevatorID string) {
+func transferOrders(lostElevator config.Elev, activeElevators *[config.NumElevs]bool, orderChan config.OrderChannels, id string,
+	elevatorArray *[config.NumElevs]config.Elev, lostElevatorID string) {
 	for floor := 0; floor < config.NumFloors; floor++ {
 		for button := elevio.BT_HallUp; button < elevio.BT_Cab; button++ {
 			if lostElevator.Queue[floor][button] {
@@ -48,7 +48,7 @@ func transferOrders(lostElevator config.Elev, activeElevators *[3]bool, orderCha
 }
 
 func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id string, elev *config.Elev, connErrorChan chan string,
-	activeElevators *[config.NumElevs]bool, elevatorArray *[3]config.Elev) {
+	activeElevators *[config.NumElevs]bool, elevatorArray *[config.NumElevs]config.Elev) {
 	idAsInt, _ := strconv.Atoi(id)
 	elevatorArray[idAsInt-1] = *elev
 	for {
