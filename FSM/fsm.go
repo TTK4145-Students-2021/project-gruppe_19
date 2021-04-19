@@ -7,8 +7,6 @@ import (
 	"../driver/elevio"
 )
 
-const numFloors = 4
-const numButtons = 3
 const elevSendInterval = 100 * time.Millisecond //timer for how often we send the current elevator over elevatorchannel
 const timerTime = 4
 
@@ -25,8 +23,8 @@ func FsmInit(elevator *config.Elev, drvChan config.DriverChannels) {
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevio.SetFloorIndicator(floor)
 			elevator.Floor = floor
-			for i := 0; i < numFloors; i++ {
-				for j := elevio.BT_HallUp; j < numButtons; j++ {
+			for i := 0; i < config.NumFloors; i++ {
+				for j := elevio.BT_HallUp; j < config.NumButtons; j++ {
 					elevio.SetButtonLamp(j, i, false)
 				}
 			}
@@ -46,7 +44,7 @@ func tryRestartMotor(elevator *config.Elev, drvChan config.DriverChannels) {
 	success := false
 
 	for !success {
-		if elevator.Floor < (numFloors - 2) { //last sensed floor
+		if elevator.Floor < (config.NumFloors - 2) { //last sensed floor
 			elevio.SetMotorDirection(elevio.MD_Up) //just sends it some safe direction. Not trying for optimality
 		} else {
 			elevio.SetMotorDirection(elevio.MD_Down)

@@ -9,7 +9,7 @@ import (
 
 func ordersAbove(elevator config.Elev) bool {
 	currentFloor := elevator.Floor
-	for i := currentFloor + 1; i < numFloors; i++ {
+	for i := currentFloor + 1; i < config.NumFloors; i++ {
 		if elevator.Queue[i][0] || elevator.Queue[i][1] || elevator.Queue[i][2] {
 			return true
 		}
@@ -38,7 +38,7 @@ func ordersInFloor(elevator config.Elev) bool {
 					return true
 				} else if btn == 2 { //cab orders will always stop no matter which direction
 					return true
-				} else if elevator.Floor == 0 || elevator.Floor == (numFloors-1) { //takes care of the edge cases
+				} else if elevator.Floor == 0 || elevator.Floor == (config.NumFloors-1) { //takes care of the edge cases
 					return true
 				} else if elevator.Dir == config.DOWN && (btn == 0) && !ordersBelow(elevator) {
 					return true
@@ -57,14 +57,14 @@ func ordersInFloor(elevator config.Elev) bool {
 }
 
 func DeleteOrder(elevator *config.Elev) {
-	for i := 0; i < numButtons; i++ {
+	for i := 0; i < config.NumButtons; i++ {
 		elevator.Queue[elevator.Floor][i] = false
 	}
 }
 
 func DeleteAllOrders(elevator *config.Elev) {
-	for btn := 0; btn < numButtons; btn++ {
-		for floor := 0; floor < numFloors; floor++ {
+	for btn := 0; btn < config.NumButtons; btn++ {
+		for floor := 0; floor < config.NumFloors; floor++ {
 			elevator.Queue[floor][btn] = false
 			fmt.Println(elevator.Queue[floor][btn])
 		}
@@ -83,8 +83,8 @@ func motorDirToElevDir(direction elevio.MotorDirection) config.Direction {
 }
 
 func printQueue(elevator config.Elev) {
-	for button := 0; button < numButtons; button++ {
-		for floor := 0; floor < numFloors; floor++ {
+	for button := 0; button < config.NumButtons; button++ {
+		for floor := 0; floor < config.NumFloors; floor++ {
 			fmt.Println(elevator.Queue[floor][button])
 		}
 	}

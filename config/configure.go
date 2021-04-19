@@ -4,8 +4,11 @@ import (
 	"../driver/elevio"
 )
 
-const numFloors = 4
-const numButtons = 3
+const (
+	NumFloors  int = 4
+	NumElevs       = 3
+	NumButtons     = 3
+)
 
 type ElevatorState int
 
@@ -28,7 +31,7 @@ type Elev struct {
 	State ElevatorState
 	Dir   Direction
 	Floor int
-	Queue [numFloors][numButtons]bool
+	Queue [NumFloors][NumButtons]bool
 }
 
 type DriverChannels struct {

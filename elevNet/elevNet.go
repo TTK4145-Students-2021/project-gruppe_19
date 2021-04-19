@@ -10,14 +10,7 @@ import (
 	"../network/peers"
 )
 
-const numFloors = 4
-const numButtons = 3
-
 const interval = 100 * time.Millisecond //should sync with elevator channel timing
-
-const numElevs = 3
-
-var iteration = 0
 
 func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels, id string, orderChan config.OrderChannels, elevator *config.Elev) {
 	elev := config.Elev{}

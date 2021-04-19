@@ -8,14 +8,10 @@ import (
 	"../driver/elevio"
 )
 
-const numElev = 3
-const numButtons = 3
-const numFloors = 4
-
 func costFunc(elevatorArray [3]config.Elev, orderFloor int, activeElevators *[3]bool) string { //TODO: some less basic cost function maybe?, works OK though.
 	closestDist := 1000.0 //just something large
 	bestElevID := " "
-	for elevIndx := 0; elevIndx < numElev; elevIndx++ {
+	for elevIndx := 0; elevIndx < config.NumElevs; elevIndx++ {
 		elev := elevatorArray[elevIndx]
 		if math.Abs(float64(elev.Floor-orderFloor)) < float64(closestDist) && (elev.State != config.ERROR) && activeElevators[elevIndx] && elev.Floor >= 0 { //if in error state, do not receive more orders
 			closestDist = math.Abs(float64(elev.Floor - orderFloor))
@@ -29,7 +25,7 @@ func costFunc(elevatorArray [3]config.Elev, orderFloor int, activeElevators *[3]
 
 func transferOrders(lostElevator config.Elev, activeElevators *[3]bool, orderChan config.OrderChannels, id string,
 	elevatorArray *[3]config.Elev, lostElevatorID string) {
-	for floor := 0; floor < numFloors; floor++ {
+	for floor := 0; floor < config.NumFloors; floor++ {
 		for button := elevio.BT_HallUp; button < elevio.BT_Cab; button++ {
 			if lostElevator.Queue[floor][button] {
 				receivingID := costFunc(*elevatorArray, floor, activeElevators)

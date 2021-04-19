@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"./FSM"
+
 	"./config"
 	"./driver/elevio"
 	"./elevNet"
@@ -15,10 +16,6 @@ import (
 )
 
 func main() {
-
-	const numFloors = 4
-	const numButtons = 3
-
 	//numElevs_p := flag.Int("num_elevs", 3, "Number of elevators working")
 	elevPort_p := flag.String("elev_port", "15657", "The port of the elevator to connect to (for sim purposes)")
 	transmitPort_p := flag.String("transmit_port", "14654", "Port to transmit to other elevator")
@@ -40,13 +37,13 @@ func main() {
 	fmt.Println("Elevport ", hostString)
 
 	println("Connecting to server")
-	elevio.Init(hostString, numFloors)
+	elevio.Init(hostString, config.NumFloors)
 
 	var elevator = config.Elev{
 		State: config.IDLE,
 		Dir:   config.STILL,
 		Floor: 0, //denne har ingenting å si siden den oppdateres i FSMinit
-		Queue: [numFloors][numButtons]bool{},
+		Queue: [config.NumFloors][config.NumButtons]bool{},
 	}
 
 	activeElevators := [3]bool{true, true, true}
