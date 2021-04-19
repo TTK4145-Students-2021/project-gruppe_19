@@ -15,15 +15,7 @@ const numButtons = 3
 
 const interval = 1000 * time.Millisecond
 
-const timerTime = 3
-
 const numElevs = 3
-
-var connectionTimer1 = time.NewTimer(timerTime * time.Second)
-var connectionTimer2 = time.NewTimer(timerTime * time.Second)
-
-var timerArray = [numElevs - 1]*time.Timer{connectionTimer1, connectionTimer2} //hardkoda, kan moduleres med slices
-var timerShot = [numElevs - 1]bool{false, false}
 
 func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels, id string, orderChan config.OrderChannels, elevator *config.Elev) {
 	elev := *elevator
@@ -49,12 +41,6 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChannels,
 	peerUpdateCh chan peers.PeerUpdate, id string, orderChan config.OrderChannels, connErrorChan chan string, activeElevators *[3]bool) {
 	elevMap := make(map[string]config.Elev)
-	//connectionErrorMap := make(map[string]*time.Timer)
-	connectionErrorIndex := make(map[string]int)
-	connIndex := 0       //not currently used
-	timerArray[0].Stop() //redo
-	timerArray[1].Stop()
-	//idIndex, _ := strconv.Atoi(id)
 
 	for {
 		select {
@@ -71,11 +57,6 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 			} else {
 				println("Connection broken!") //this happens when a connection is broken
 			}
-
-			/*if elevatorList[idIndex-1].ID == id {
-				ch.TransmittStateCh <- map[string][cf.NumElevators]cf.ElevatorState{idAsString: *elevatorList}
-			}*/
-
 			//If lost a peer, update the active elevator list and start order redistribution
 			if len(p.Lost) > 0 {
 				for _, peer := range p.Lost {
@@ -91,15 +72,7 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 			if receivedElev.ID == id && receivedElev.OrderIncl {
 				orderChan.ExtOrder <- receivedElev.Order
 			}
-			_, ok := connectionErrorIndex[receivedElev.ID] //checks if an index already exists for this elevator ID
-			if !ok && receivedElev.ID != id {              //if it doesnt, make one
-				connectionErrorIndex[receivedElev.ID] = connIndex
-				connIndex++
-			}
-
-			timerIndex := connectionErrorIndex[receivedElev.ID]   //index in timerArray for the received elevator
-			timerArray[timerIndex].Reset(timerTime * time.Second) // reset connection timer for the received elevator
-			elevMap[receivedElev.ID] = receivedElev.Elevator      //update elevatorMap
+			elevMap[receivedElev.ID] = receivedElev.Elevator //update elevatorMap
 			elevChan.MapChan <- elevMap
 
 		case thisElev := <-elevChan.Elevator:
@@ -108,44 +81,6 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 			for i := 0; i < 3; i++ {
 				println("Elev: ", i+1, " ", activeElevators[i])
 			}
-			/*
-				case <-timerArray[0].C: //chooses a timer to check each iteration
-
-					if !timerShot[0] {
-						thisIndex := 0 //randIndexCounter % (connIndex)
-						errorID := " "
-						for elevID, indx := range connectionErrorIndex {
-							if thisIndex == indx {
-								errorID = elevID
-							}
-						}
-						if errorID != " " { //just in case something weird happens
-							println("lost connection to: ", errorID)
-							connErrorChan <- errorID
-						} else {
-							println("This should never happen. Connection ErrorID is undefined")
-						}
-						timerShot[0] = true
-					}
-
-				case <-timerArray[1].C:
-					if !timerShot[1] {
-
-						thisIndex := 1 //randIndexCounter % (connIndex)
-						errorID := " "
-						for elevID, indx := range connectionErrorIndex {
-							if thisIndex == indx {
-								errorID = elevID
-							}
-						}
-						if errorID != " " { //just in case something weird happens
-							println("lost connection to: ", errorID)
-							connErrorChan <- errorID
-						} else {
-							println("This should never happen. Connection ErrorID is undefined")
-						}
-						timerShot[1] = true
-					}*/
 		}
 
 	}
