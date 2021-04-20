@@ -73,17 +73,19 @@ func main() {
 	go elevio.PollButtons(driverChannels.DrvButtons)
 	go elevio.PollFloorSensor(driverChannels.DrvFloors)
 	go elevio.PollStopButton(driverChannels.DrvStop)
-	go FSM.Fsm(elevChannels, &elevator, driverChannels)
 
+	go FSM.Fsm(elevChannels, &elevator, driverChannels)
 	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator, &activeElevators, &elevatorArray)
 
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	peerTxEnable := make(chan bool)
-	//elevInt, _ := strconv.Atoi(elevPort)
+
+	//Making all received ports into ints
 	receiveInt, _ := strconv.Atoi(receivePort)
 	transmitInt, _ := strconv.Atoi(transmitPort)
 	receiveInt2, _ := strconv.Atoi(receivePort2)
 
+	//Making the peer-update messages send on the message ports +1 to reduce the needed amount of flags
 	go peers.Transmitter(transmitInt+1, id, peerTxEnable)
 	go peers.Receiver(receiveInt+1, peerUpdateCh)
 	go peers.Receiver(receiveInt2+1, peerUpdateCh)
@@ -95,14 +97,14 @@ func main() {
 	go bcast.Transmitter(transmitInt, networkTx)
 	go bcast.Receiver(receiveInt, networkRx)
 
-	//broadcasting and receiving to/from the second elevator
+	//receiving from the second elevator
 	go bcast.Receiver(receiveInt2, networkRx)
 
 	//Handles parsing and handling of messages sent and received
 	go elevNet.SendElev(networkTx, elevChannels, id, orderChannels, &elevator)
 	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, orderChannels, &activeElevators, &elevatorArray)
 
-	//less go!!!!!
+	//LETS go!!!!!
 	FSM.InternalControl(driverChannels, orderChannels, elevChannels, &elevator)
 
 }

@@ -8,22 +8,24 @@ import (
 	"../driver/elevio"
 )
 
-func costFunc(elevatorArray [config.NumElevs]config.Elev, orderFloor int, activeElevators *[config.NumElevs]bool) string { //TODO: some less basic cost function maybe?, works OK though.
-	closestDist := 1000.0 //just something large
+//Simple closest distance cost function
+func costFunc(elevatorArray [config.NumElevs]config.Elev, orderFloor int, activeElevators *[config.NumElevs]bool) string {
+	shortestDist := 1000.0 //just something large
 	bestElevID := " "
 	for elevIndx := 0; elevIndx < config.NumElevs; elevIndx++ {
-		elev := elevatorArray[elevIndx]
-		if math.Abs(float64(elev.Floor-orderFloor)) < float64(closestDist) &&
-			(elev.State != config.ERROR) && activeElevators[elevIndx] && elev.Floor >= 0 { //if in error state, do not receive more orders
-			closestDist = math.Abs(float64(elev.Floor - orderFloor))
+		consideredElev := elevatorArray[elevIndx]
+		if math.Abs(float64(consideredElev.Floor-orderFloor)) < float64(shortestDist) &&
+			(consideredElev.State != config.ERROR) && activeElevators[elevIndx] && consideredElev.Floor >= 0 { //if in error state, do not receive more orders
+			shortestDist = math.Abs(float64(consideredElev.Floor - orderFloor))
 			bestElevID = strconv.Itoa(elevIndx + 1)
 		}
 	}
-	println("closestDist: ", closestDist, "elev: ", bestElevID)
+	println("shortestDist: ", shortestDist, "elev: ", bestElevID)
 	return bestElevID
 
 }
 
+//Transfers orders from an elevator to an active elevator
 func transferOrders(lostElevator config.Elev, activeElevators *[config.NumElevs]bool, orderChan config.OrderChannels, id string,
 	elevatorArray *[config.NumElevs]config.Elev, lostElevatorID string) {
 	for floor := 0; floor < config.NumFloors; floor++ {
@@ -39,7 +41,6 @@ func transferOrders(lostElevator config.Elev, activeElevators *[config.NumElevs]
 					orderChan.ExternalID <- receivingID
 				} else { //if the chosen elevator is this one, send it directly
 					orderChan.ExtOrder <- order
-					//elevatorList[lostElevatorIndex-1].Queue[floor][button] = false
 				}
 
 			}
@@ -47,6 +48,7 @@ func transferOrders(lostElevator config.Elev, activeElevators *[config.NumElevs]
 	}
 }
 
+//Chooses which elevator should get an order, and handles transfering of orders if one elevator disconnects
 func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id string, elev *config.Elev,
 	activeElevators *[config.NumElevs]bool, elevatorArray *[config.NumElevs]config.Elev) {
 	idAsInt, _ := strconv.Atoi(id)

@@ -7,6 +7,7 @@ import (
 	"../driver/elevio"
 )
 
+//Check if there are orders above the current floor
 func ordersAbove(elevator config.Elev) bool {
 	currentFloor := elevator.Floor
 	for i := currentFloor + 1; i < config.NumFloors; i++ {
@@ -17,6 +18,7 @@ func ordersAbove(elevator config.Elev) bool {
 	return false
 }
 
+//Checks if there are orders below the current floor
 func ordersBelow(elevator config.Elev) bool {
 	currentFloor := elevator.Floor
 	for i := currentFloor - 1; i > -1; i-- {
@@ -27,6 +29,7 @@ func ordersBelow(elevator config.Elev) bool {
 	return false
 }
 
+//Checks if there are orders in the current floor
 func ordersInFloor(elevator config.Elev) bool {
 	if elevator.Floor >= 0 {
 
@@ -56,12 +59,14 @@ func ordersInFloor(elevator config.Elev) bool {
 
 }
 
+//Deletes an order from elevator queue
 func deleteOrder(elevator *config.Elev) {
 	for i := 0; i < config.NumButtons; i++ {
 		elevator.Queue[elevator.Floor][i] = false
 	}
 }
 
+//Gets one or two orders out of the queue at the current floor
 func getOrder(elevator *config.Elev) (elevio.ButtonEvent, elevio.ButtonEvent) {
 	button1 := elevio.ButtonEvent{Floor: -1, Button: elevio.BT_Cab}
 	button2 := elevio.ButtonEvent{Floor: -1, Button: elevio.BT_Cab}
@@ -73,16 +78,7 @@ func getOrder(elevator *config.Elev) (elevio.ButtonEvent, elevio.ButtonEvent) {
 	return button1, button2
 }
 
-func DeleteAllOrders(elevator *config.Elev) {
-	for btn := 0; btn < config.NumButtons; btn++ {
-		for floor := 0; floor < config.NumFloors; floor++ {
-			elevator.Queue[floor][btn] = false
-			fmt.Println(elevator.Queue[floor][btn])
-		}
-	}
-
-}
-
+//Maps from motor direction to the elevator direction
 func motorDirToElevDir(direction elevio.MotorDirection) config.Direction {
 	if direction == elevio.MD_Up {
 		return config.UP
@@ -93,6 +89,7 @@ func motorDirToElevDir(direction elevio.MotorDirection) config.Direction {
 	}
 }
 
+//Prints the queue out
 func printQueue(elevator config.Elev) {
 	for button := 0; button < config.NumButtons; button++ {
 		for floor := 0; floor < config.NumFloors; floor++ {
