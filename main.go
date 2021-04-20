@@ -35,6 +35,7 @@ func main() {
 	println("Connecting to server")
 	elevio.Init(hostString, config.NumFloors)
 
+	//The elevator object the state machine will handle
 	var elevator = config.Elev{
 		State: config.IDLE,
 		Dir:   config.STILL,
@@ -42,16 +43,17 @@ func main() {
 		Queue: [config.NumFloors][config.NumButtons]bool{},
 	}
 
-	activeElevators := [config.NumElevs]bool{true, true, true}
+	//List of active elevators and their last received elevator object
+	activeElevators := [config.NumElevs]bool{}
 	elevatorArray := [config.NumElevs]config.Elev{}
 
+	//Making all channels needed to run program
 	driverChannels := config.DriverChannels{
-		DrvButtons:     make(chan elevio.ButtonEvent),
-		DrvFloors:      make(chan int),
-		DrvStop:        make(chan bool),
-		DoorsOpen:      make(chan int),
-		CompletedOrder: make(chan elevio.ButtonEvent, 100),
-		DrvObstr:       make(chan bool),
+		DrvButtons: make(chan elevio.ButtonEvent),
+		DrvFloors:  make(chan int),
+		DrvStop:    make(chan bool),
+		DoorsOpen:  make(chan int),
+		DrvObstr:   make(chan bool),
 	}
 
 	orderChannels := config.OrderChannels{
@@ -67,15 +69,13 @@ func main() {
 		Elevator: make(chan config.Elev),
 	}
 
-	connectionErrorChannel := make(chan string)
-
 	go elevio.PollObstructionSwitch(driverChannels.DrvObstr)
 	go elevio.PollButtons(driverChannels.DrvButtons)
 	go elevio.PollFloorSensor(driverChannels.DrvFloors)
 	go elevio.PollStopButton(driverChannels.DrvStop)
 	go FSM.Fsm(elevChannels, &elevator, driverChannels)
 
-	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator, connectionErrorChannel, &activeElevators, &elevatorArray)
+	go ordermanager.OrderMan(orderChannels, elevChannels, id, &elevator, &activeElevators, &elevatorArray)
 
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	peerTxEnable := make(chan bool)
@@ -100,7 +100,7 @@ func main() {
 
 	//Handles parsing and handling of messages sent and received
 	go elevNet.SendElev(networkTx, elevChannels, id, orderChannels, &elevator)
-	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, orderChannels, connectionErrorChannel, &activeElevators, &elevatorArray)
+	go elevNet.ReceiveElev(networkRx, elevChannels, peerUpdateCh, id, orderChannels, &activeElevators, &elevatorArray)
 
 	//less go!!!!!
 	FSM.InternalControl(driverChannels, orderChannels, elevChannels, &elevator)

@@ -11,7 +11,7 @@ import (
 )
 
 const sendingInterval = 100 * time.Millisecond //should sync with elevator channel timing?
-//const orderInterval = 10
+const orderInterval = 10
 
 func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels, id string, orderChan config.OrderChannels, elevator *config.Elev) {
 	elev := config.Elev{}
@@ -33,14 +33,15 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 		case sendOrder := <-orderChan.SendOrder: //channel that has included an order to be sent externally
 			recipientID := <-orderChan.ExternalID
 			sendingQueue[recipientID] = sendOrder
-			/*for sendID, order := range sendingQueue {
+			for sendID, order := range sendingQueue {
 				go func() { //this works. Not sure if intended, but elevators still run
 					orderMessage := config.NetworkMessage{elev, sendID, true, order, true, false}
 					networkTx <- orderMessage
 					time.Sleep(orderInterval * time.Millisecond)
 				}()
 				println("Sent ", sendID)
-			}*/
+				delete(sendingQueue, sendID)
+			}
 
 			//not sure if this works. might have sync issues. update: think it works :)
 			orderMessage := config.NetworkMessage{elev, recipientID, true, sendOrder, true, false} //sends current elevator with an order
@@ -55,7 +56,7 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 }
 
 func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChannels,
-	peerUpdateCh chan peers.PeerUpdate, id string, orderChan config.OrderChannels, connErrorChan chan string,
+	peerUpdateCh chan peers.PeerUpdate, id string, orderChan config.OrderChannels,
 	activeElevators *[config.NumElevs]bool, elevatorArray *[config.NumElevs]config.Elev) {
 	//elevMap := make(map[string]config.Elev)
 

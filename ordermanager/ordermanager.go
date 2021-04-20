@@ -47,7 +47,7 @@ func transferOrders(lostElevator config.Elev, activeElevators *[config.NumElevs]
 	}
 }
 
-func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id string, elev *config.Elev, connErrorChan chan string,
+func OrderMan(orderChan config.OrderChannels, elevChan config.ElevChannels, id string, elev *config.Elev,
 	activeElevators *[config.NumElevs]bool, elevatorArray *[config.NumElevs]config.Elev) {
 	idAsInt, _ := strconv.Atoi(id)
 	elevatorArray[idAsInt-1] = *elev

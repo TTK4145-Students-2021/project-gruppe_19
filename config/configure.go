@@ -36,12 +36,11 @@ type Elev struct {
 }
 
 type DriverChannels struct {
-	DrvButtons     chan elevio.ButtonEvent
-	DrvFloors      chan int
-	DrvStop        chan bool
-	DoorsOpen      chan int
-	CompletedOrder chan elevio.ButtonEvent
-	DrvObstr       chan bool
+	DrvButtons chan elevio.ButtonEvent
+	DrvFloors  chan int
+	DrvStop    chan bool
+	DoorsOpen  chan int
+	DrvObstr   chan bool
 }
 
 type OrderChannels struct {

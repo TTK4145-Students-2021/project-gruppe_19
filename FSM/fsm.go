@@ -77,7 +77,6 @@ func Fsm(elevChan config.ElevChannels, elevator *config.Elev, drvChan config.Dri
 		switch elevator.State {
 		case config.IDLE:
 			if ordersAbove(*elevator) {
-				//println("order above,going up, current Floor: ", Floor)
 				dir = elevio.MD_Up
 				elevator.Dir = motorDirToElevDir(dir)
 				elevio.SetMotorDirection(dir)
