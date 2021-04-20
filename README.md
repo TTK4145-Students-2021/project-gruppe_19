@@ -9,7 +9,8 @@ To run this:
 
 ```bash
 chmod +x run_elevs.sh
-./run_elevs.shm
+./run_elevs.sh
+```
 
 ## Simulator
 The simulator folder is provided, but the simulator executable can be found here:
