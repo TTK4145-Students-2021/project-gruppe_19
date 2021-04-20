@@ -37,3 +37,6 @@ We are using the network module provided, which uses UDP to send and recieve inf
 ### orderManager
 
 The orderManager takes care of delegating orders. It has information about the current state of all the elevators, and delegates orders using a simple cost function. If an elevator is lost it is also responsible for transfering the orders to any of the remaining operational elevators.
+
+### driver
+The driver module takes care of the interaction between the code and the simulator
