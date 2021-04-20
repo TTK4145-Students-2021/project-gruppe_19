@@ -22,11 +22,15 @@ func SendElev(networkTx chan config.NetworkMessage, elevChan config.ElevChannels
 	for {
 		select {
 		case <-time.After(sendingInterval): //sends this elevator over UDP every *sendingInterval*
+			timesSent := 0
 			updateMessage := config.NetworkMessage{elev, id, false, dummyButton, false, turnOffLight}
 
 			dummyButton = elevio.ButtonEvent{-1, elevio.BT_HallDown} //reset button and light bool
 			turnOffLight = false
-			networkTx <- updateMessage
+			for timesSent < 3 { //to be robust against packet loss. Set this to 1 if it doesnt matter
+				networkTx <- updateMessage
+				timesSent++
+			}
 
 		case elev = <-elevChan.Elevator:
 			//update elevator
@@ -90,8 +94,7 @@ func ReceiveElev(networkRx chan config.NetworkMessage, elevChan config.ElevChann
 				elevio.SetButtonLamp(receivedElev.Order.Button, receivedElev.Order.Floor, true)
 			}
 			if receivedElev.TurnOffOrderLight { //if the message includes an order which another elevator has completed, turn off the order light
-				elevio.SetButtonLamp(elevio.BT_HallDown, receivedElev.Order.Floor, false)
-				elevio.SetButtonLamp(elevio.BT_HallUp, receivedElev.Order.Floor, false)
+				elevio.SetButtonLamp(receivedElev.Order.Button, receivedElev.Order.Floor, false)
 			}
 			idAsInt, _ := strconv.Atoi(receivedElev.ID)
 			elevatorArray[idAsInt-1] = receivedElev.Elevator
